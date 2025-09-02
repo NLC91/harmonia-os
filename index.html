@@ -39,100 +39,19 @@
                     <circle cx="100" cy="100" r="90" class="score-fill" id="harmonyCircle"/>
                 </svg>
                 <div class="score-text">
-                    <span class="score-number" id="harmonyScore">75</span>
+                    <span class="score-number" id="harmonyScore">0</span>
                     <span class="score-label">Harmonie</span>
                 </div>
             </div>
-            <p class="score-message" id="scoreMessage">Votre équilibre de vie est bon !</p>
+            <p class="score-message" id="scoreMessage">Calculez votre équilibre de vie</p>
         </div>
 
         <!-- Mandala de Vie - 6 Sphères -->
         <div class="life-mandala">
             <div class="mandala-container">
-                <!-- Sphère Santé -->
-                <div class="sphere" data-sphere="health" style="--angle: 0deg;">
-                    <div class="sphere-content">
-                        <div class="sphere-icon">💪</div>
-                        <h3>Santé</h3>
-                        <div class="sphere-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" data-progress="60" style="width: 60%"></div>
-                            </div>
-                            <span class="progress-text">60%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sphère Spiritualité -->
-                <div class="sphere" data-sphere="spiritual" style="--angle: 60deg;">
-                    <div class="sphere-content">
-                        <div class="sphere-icon">🧘</div>
-                        <h3>Spiritualité</h3>
-                        <div class="sphere-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" data-progress="40" style="width: 40%"></div>
-                            </div>
-                            <span class="progress-text">40%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sphère Famille -->
-                <div class="sphere" data-sphere="family" style="--angle: 120deg;">
-                    <div class="sphere-content">
-                        <div class="sphere-icon">👨‍👩‍👧</div>
-                        <h3>Famille</h3>
-                        <div class="sphere-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" data-progress="80" style="width: 80%"></div>
-                            </div>
-                            <span class="progress-text">80%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sphère Social -->
-                <div class="sphere" data-sphere="social" style="--angle: 180deg;">
-                    <div class="sphere-content">
-                        <div class="sphere-icon">👥</div>
-                        <h3>Social</h3>
-                        <div class="sphere-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" data-progress="45" style="width: 45%"></div>
-                            </div>
-                            <span class="progress-text">45%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sphère Professionnel -->
-                <div class="sphere" data-sphere="work" style="--angle: 240deg;">
-                    <div class="sphere-content">
-                        <div class="sphere-icon">💼</div>
-                        <h3>Professionnel</h3>
-                        <div class="sphere-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" data-progress="90" style="width: 90%"></div>
-                            </div>
-                            <span class="progress-text">90%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sphère Finances -->
-                <div class="sphere" data-sphere="finance" style="--angle: 300deg;">
-                    <div class="sphere-content">
-                        <div class="sphere-icon">💰</div>
-                        <h3>Finances</h3>
-                        <div class="sphere-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" data-progress="70" style="width: 70%"></div>
-                            </div>
-                            <span class="progress-text">70%</span>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- Les 6 sphères seront générées dynamiquement -->
+                <div id="spheresContainer"></div>
+                
                 <!-- Centre du Mandala -->
                 <div class="mandala-center">
                     <button class="harmony-btn" id="harmonyBtn">
@@ -164,52 +83,28 @@
 
         <!-- Today's Focus -->
         <div class="today-focus">
-            <h2>Focus du Jour</h2>
-            <div class="focus-items">
-                <div class="focus-item">
-                    <input type="checkbox" id="focus1">
-                    <label for="focus1">Séance de sport 30 min</label>
-                </div>
-                <div class="focus-item">
-                    <input type="checkbox" id="focus2">
-                    <label for="focus2">Appeler Maman</label>
-                </div>
-                <div class="focus-item">
-                    <input type="checkbox" id="focus3">
-                    <label for="focus3">Finaliser présentation</label>
-                </div>
+            <div class="focus-header">
+                <h2>Focus du Jour</h2>
+                <button class="add-task-btn" id="addTaskBtn">+ Ajouter</button>
+            </div>
+            <div class="focus-items" id="focusItems">
+                <!-- Les tâches seront générées dynamiquement -->
             </div>
         </div>
 
         <!-- Insights -->
         <div class="insights">
             <h2>Insights du Jour</h2>
-            <div class="insight-cards">
-                <div class="insight-card">
-                    <div class="insight-icon">😴</div>
-                    <h4>Sommeil</h4>
-                    <p>7h30 cette nuit</p>
-                    <span class="trend up">+15%</span>
-                </div>
-                <div class="insight-card">
-                    <div class="insight-icon">🏃</div>
-                    <h4>Activité</h4>
-                    <p>4,500 pas</p>
-                    <span class="trend down">-20%</span>
-                </div>
-                <div class="insight-card">
-                    <div class="insight-icon">💧</div>
-                    <h4>Hydratation</h4>
-                    <p>5/8 verres</p>
-                    <span class="trend neutral">62%</span>
-                </div>
-                <div class="insight-card">
-                    <div class="insight-icon">😊</div>
-                    <h4>Humeur</h4>
-                    <p>Positive</p>
-                    <span class="trend up">Stable</span>
-                </div>
+            <div class="insight-cards" id="insightCards">
+                <!-- Les insights seront générés dynamiquement -->
             </div>
+        </div>
+
+        <!-- Timer de Méditation -->
+        <div class="meditation-timer" id="meditationTimer" style="display: none;">
+            <h3>Méditation en cours</h3>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <button class="btn-stop" onclick="stopMeditation()">Arrêter</button>
         </div>
     </div>
 
@@ -218,6 +113,27 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Modal Journal -->
+    <div class="modal" id="journalModal">
+        <div class="modal-content journal-content">
+            <span class="close" onclick="closeJournal()">&times;</span>
+            <h2>📝 Journal Personnel</h2>
+            <div class="journal-form">
+                <label>Comment vous sentez-vous ? (1-10)</label>
+                <input type="range" id="moodRange" min="1" max="10" value="7">
+                <span id="moodValue">7</span>
+                
+                <label>Gratitudes du jour</label>
+                <textarea id="gratitudeText" placeholder="Je suis reconnaissant pour..."></textarea>
+                
+                <label>Réflexions</label>
+                <textarea id="reflectionText" placeholder="Aujourd'hui, j'ai appris que..."></textarea>
+                
+                <button class="btn-primary" onclick="saveJournal()">Sauvegarder</button>
+            </div>
         </div>
     </div>
 
