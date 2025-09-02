@@ -1,4 +1,4 @@
-// Harmonia OS - JavaScript Version Finale
+// Harmonia OS - JavaScript Version Finale (avec fonctions manquantes ajoutées)
 
 // État de l'application
 const appState = {
@@ -19,8 +19,16 @@ const appState = {
         mood: { icon: '😊', label: 'Humeur', value: 'Positive', unit: '', trend: 'up' }
     },
     meditationTimer: null,
-    meditationSeconds: 0
+    meditationSeconds: 0,
+    journalEntries: [],
+    habits: {}, // habitId => habit object
+    preferences: {
+        onboardingCompleted: false
+    }
 };
+
+// Storage key
+const STORAGE_KEY = 'harmonia_v1';
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
@@ -37,9 +45,20 @@ function initializeApp() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
     animateOnLoad();
+
+    // Initialize optional services if available
+    if (window.NotificationService) NotificationService.requestPermission();
+    if (window.Onboarding && !appState.preferences.onboardingCompleted) {
+        // small delay so UI mounts first
+        setTimeout(() => {
+            window.Onboarding.startOnboarding();
+        }, 400);
+    }
 }
 
-// Rendu des sphères
+/* ----------------------------
+   Rendu des sphères, tâches, insights (existant)
+   ---------------------------- */
 function renderSpheres() {
     const container = document.getElementById('spheresContainer');
     container.innerHTML = '';
@@ -69,7 +88,6 @@ function renderSpheres() {
     });
 }
 
-// Rendu des tâches
 function renderFocusTasks() {
     const container = document.getElementById('focusItems');
     
@@ -79,24 +97,35 @@ function renderFocusTasks() {
     }
     
     container.innerHTML = appState.focusTasks.map((task, index) => `
-        <div class="focus-item">
+        <div class="focus-item" data-index="${index}">
             <input type="checkbox" id="task${index}" ${task.completed ? 'checked' : ''}>
-            <label for="task${index}">${task.text}</label>
-            <button class="delete-task" onclick="deleteTask(${index})">×</button>
+            <label for="task${index}">${task.text}${task.sphereKey ? ' • ' + (appState.spheres[task.sphereKey]?.name || '') : ''}</label>
+            <button class="delete-task" data-index="${index}">×</button>
         </div>
     `).join('');
     
     // Réattacher les event listeners
-    document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
+    document.querySelectorAll('.focus-item input').forEach((checkbox, idx) => {
         checkbox.addEventListener('change', function() {
+            const index = parseInt(this.id.replace('task', ''), 10);
             appState.focusTasks[index].completed = this.checked;
             updateProgress();
             saveData();
+            if (this.checked) {
+                if (window.NotificationService) NotificationService.cancelReminderForTask(appState.focusTasks[index]);
+            }
+        });
+    });
+
+    // delete buttons
+    document.querySelectorAll('.delete-task').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const index = parseInt(this.dataset.index, 10);
+            deleteTask(index);
         });
     });
 }
 
-// Rendu des insights
 function renderInsights() {
     const container = document.getElementById('insightCards');
     
@@ -118,7 +147,9 @@ function getTrendText(trend) {
     }
 }
 
-// Calcul du score d'harmonie
+/* ----------------------------
+   Calcul du score d'harmonie (existant)
+   ---------------------------- */
 function calculateHarmonyScore() {
     const scores = Object.values(appState.spheres).map(s => s.progress);
     const average = scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -154,7 +185,9 @@ function updateHarmonyDisplay() {
     circleElement.style.strokeDashoffset = offset;
 }
 
-// Animation des nombres
+/* ----------------------------
+   Utilitaires (existant)
+   ---------------------------- */
 function animateNumber(element, target) {
     const current = parseInt(element.textContent) || 0;
     const increment = target > current ? 1 : -1;
@@ -172,7 +205,6 @@ function animateNumber(element, target) {
     }, 20);
 }
 
-// Date et heure
 function updateDateTime() {
     const now = new Date();
     const dateElement = document.getElementById('currentDate');
@@ -183,7 +215,9 @@ function updateDateTime() {
     timeElement.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Event Listeners
+/* ----------------------------
+   Event Listeners & Handlers (complétés)
+   ---------------------------- */
 function setupEventListeners() {
     // Sphères
     document.addEventListener('click', function(e) {
@@ -195,7 +229,8 @@ function setupEventListeners() {
     });
     
     // Bouton central
-    document.getElementById('harmonyBtn').addEventListener('click', showHarmonyInsights);
+    const harmonyBtn = document.getElementById('harmonyBtn');
+    if (harmonyBtn) harmonyBtn.addEventListener('click', showHarmonyInsights);
     
     // Actions rapides
     document.querySelectorAll('.action-btn').forEach(btn => {
@@ -206,9 +241,10 @@ function setupEventListeners() {
     });
     
     // Ajouter une tâche
-    document.getElementById('addTaskBtn').addEventListener('click', addNewTask);
+    const addBtn = document.getElementById('addTaskBtn');
+    if (addBtn) addBtn.addEventListener('click', addNewTask);
     
-    // Modal
+    // Modal close handlers (already part of HTML)
     document.querySelectorAll('.modal .close').forEach(closeBtn => {
         closeBtn.addEventListener('click', function() {
             this.closest('.modal').style.display = 'none';
@@ -230,7 +266,9 @@ function setupEventListeners() {
     }
 }
 
-// Modal des sphères
+/* ----------------------------
+   Modal des sphères (existant)
+   ---------------------------- */
 function openSphereModal(sphereType) {
     const modal = document.getElementById('sphereModal');
     const modalContent = document.getElementById('modalContent');
@@ -278,91 +316,356 @@ function openSphereModal(sphereType) {
     modal.style.display = 'block';
 }
 
-// Sauvegarder le progrès
-function saveSphereProgress(sphereType) {
-    const slider = document.getElementById('sphereSlider');
-    const newProgress = parseInt(slider.value);
-    
-    appState.spheres[sphereType].progress = newProgress;
-    updateSphereDisplay(sphereType, newProgress);
-    calculateHarmonyScore();
-    saveData();
-    
-    document.getElementById('sphereModal').style.display = 'none';
-    showNotification(`✅ ${appState.spheres[sphereType].name} mis à jour !`);
-}
+/* ----------------------------
+   Fonctions manquantes demandées
+   ---------------------------- */
 
-// Mise à jour de l'affichage d'une sphère
-function updateSphereDisplay(sphereType, progress) {
-    const sphere = document.querySelector(`[data-sphere="${sphereType}"]`);
-    if (sphere) {
-        const progressBar = sphere.querySelector('.progress-fill');
-        const progressText = sphere.querySelector('.progress-text');
-        
-        progressBar.style.width = `${progress}%`;
-        progressText.textContent = `${progress}%`;
+// Persistance
+function saveData() {
+    try {
+        const copy = JSON.stringify(appState);
+        localStorage.setItem(STORAGE_KEY, copy);
+    } catch (e) {
+        console.error('Erreur lors de la sauvegarde:', e);
     }
 }
 
-// Détails des sphères
-function getSphereDetails(sphereType) {
-    const details = {
-        health: `
-            <h3>📊 Statistiques Santé</h3>
-            <ul>
-                <li>🛌 Sommeil moyen : 7h30</li>
-                <li>👟 Pas quotidiens : 4,500</li>
-                <li>💧 Hydratation : 5/8 verres</li>
-                <li>🏃 Dernière séance sport : Il y a 2 jours</li>
-            </ul>
-            <h3>🎯 Objectifs</h3>
-            <ul>
-                <li>✅ 3 séances de sport/semaine</li>
-                <li>⏳ 8h de sommeil/nuit</li>
-                <li>❌ 10,000 pas/jour</li>
-            </ul>
-        `,
-        spiritual: `
-            <h3>🧘 Pratique Spirituelle</h3>
-            <ul>
-                <li>🧘 Méditations cette semaine : 3/7</li>
-                <li>📝 Journal de gratitude : 5/7</li>
-                <li>🤔 Temps de réflexion : 2h</li>
-            </ul>
-            <h3>📅 Prochaines pratiques</h3>
-            <ul>
-                <li>🌙 Méditation guidée ce soir</li>
-                <li>📖 Lecture spirituelle dimanche</li>
-            </ul>
-        `,
-        family: `
-            <h3>👨‍👩‍👧 Moments Famille</h3>
-            <ul>
-                <li>🍽️ Dîners en famille : 5/7 cette semaine</li>
-                <li>🎮 Activité commune : Samedi dernier</li>
-                <li>📞 Appels famille éloignée : 2 ce mois</li>
-            </ul>
-            <h3>📅 À planifier</h3>
-            <ul>
-                <li>🎬 Sortie cinéma ce weekend</li>
-                <li>🎂 Anniversaire de Papa (dans 2 semaines)</li>
-            </ul>
-        `,
-        social: `
-            <h3>👥 Vie Sociale</h3>
-            <ul>
-                <li>🎉 Sorties ce mois : 3</li>
-                <li>🤝 Nouveaux contacts : 2</li>
-                <li>📅 Événements à venir : 1</li>
-            </ul>
-            <h3>💫 Cercle social</h3>
-            <ul>
-                <li>👫 Amis proches contactés : 4/6</li>
-                <li>🎊 Dernière grande sortie : Il y a 10 jours</li>
-            </ul>
-        `,
-        work: `
-            <h3>💼 Performance Professionnelle</h3>
-            <ul>
-                <li>✅ Projets complétés : 8/10</li>
-                <li>⏱️ Heures focus : 
+function loadSavedData() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        // Merge saved into appState (non destructif)
+        if (saved.spheres) {
+            Object.keys(appState.spheres).forEach(k => {
+                if (saved.spheres[k]) {
+                    appState.spheres[k] = Object.assign({}, appState.spheres[k], saved.spheres[k]);
+                }
+            });
+        }
+        if (Array.isArray(saved.focusTasks)) appState.focusTasks = saved.focusTasks;
+        if (saved.insights) appState.insights = Object.assign({}, appState.insights, saved.insights);
+        if (typeof saved.harmonyScore === 'number') appState.harmonyScore = saved.harmonyScore;
+        if (saved.meditationSeconds) appState.meditationSeconds = saved.meditationSeconds;
+        if (Array.isArray(saved.journalEntries)) appState.journalEntries = saved.journalEntries;
+        if (saved.habits) appState.habits = saved.habits;
+        if (saved.preferences) appState.preferences = Object.assign({}, appState.preferences, saved.preferences);
+    } catch (e) {
+        console.warn('Impossible de charger les données sauvegardées:', e);
+    }
+}
+
+// Tâches : Ajouter / Supprimer
+function addNewTask() {
+    // simple inline prompt flow (remplaçable par un vrai modal)
+    const text = window.prompt("Nouvelle tâche - Que souhaitez-vous accomplir aujourd'hui ?");
+    if (!text || !text.trim()) return;
+    const sphereKey = window.prompt("Associer une sphère (ex: health, spiritual, family, social, work, finance). Laisser vide si non applicable.") || null;
+    const task = {
+        id: 'task_' + Date.now(),
+        text: text.trim(),
+        sphereKey: sphereKey && sphereKey.trim() ? sphereKey.trim() : null,
+        completed: false,
+        createdAt: Date.now()
+    };
+    appState.focusTasks.unshift(task);
+    renderFocusTasks();
+    saveData();
+    showNotification('Tâche ajoutée ✅');
+}
+
+function deleteTask(index) {
+    if (index < 0 || index >= appState.focusTasks.length) return;
+    const removed = appState.focusTasks.splice(index, 1);
+    renderFocusTasks();
+    saveData();
+    showNotification('Tâche supprimée');
+}
+
+// Ajouter une activité / micro-habit dans une sphère
+function addActivity(sphereType) {
+    const activity = window.prompt(`Ajouter une activité pour ${appState.spheres[sphereType].name} :`);
+    if (!activity || !activity.trim()) return;
+    // create as a focusTask (quick integration)
+    const task = {
+        id: 'task_' + Date.now(),
+        text: activity.trim(),
+        sphereKey: sphereType,
+        completed: false,
+        createdAt: Date.now()
+    };
+    appState.focusTasks.unshift(task);
+    renderFocusTasks();
+    saveData();
+    showNotification(`Activité ajoutée à ${appState.spheres[sphereType].name}`);
+}
+
+// Suggestions (utilise component Habits si présent)
+function showSuggestions(sphereType) {
+    const modal = document.getElementById('sphereModal');
+    const modalContent = document.getElementById('modalContent');
+    if (window.Habits) {
+        // render suggestions inside modal content
+        modalContent.innerHTML = `<h2>💡 Suggestions pour ${appState.spheres[sphereType].name}</h2><div id="habitTemplatesContainer"></div>`;
+        modal.style.display = 'block';
+        window.Habits.renderTemplates('habitTemplatesContainer', sphereType);
+    } else {
+        // fallback simple suggestions
+        const suggestions = {
+            health: ['Boire un verre d\'eau', 'Faire 5 minutes d\'étirement'],
+            spiritual: ['Méditer 5 min', 'Noter 1 gratitude'],
+            family: ['Appeler un proche', 'Préparer un repas ensemble'],
+            social: ['Envoyer un message à un ami', 'Inviter quelqu\'un pour un café'],
+            work: ['Bloc focus de 25 min', 'Planifier session de revue'],
+            finance: ['Vérifier dépenses 5 min', 'Planifier épargne mensuelle']
+        };
+        modalContent.innerHTML = `<h3>Suggestions</h3><ul>${(suggestions[sphereType] || []).map(s => `<li>${s} <button onclick="quickAddFromSuggestion('${sphereType}','${escapeForInline(s)}')">Ajouter</button></li>`).join('')}</ul>`;
+        modal.style.display = 'block';
+    }
+}
+
+function escapeForInline(str) {
+    return str.replace(/'/g, "\\'");
+}
+
+function quickAddFromSuggestion(sphereType, text) {
+    const task = {
+        id: 'task_' + Date.now(),
+        text,
+        sphereKey: sphereType,
+        completed: false,
+        createdAt: Date.now()
+    };
+    appState.focusTasks.unshift(task);
+    renderFocusTasks();
+    saveData();
+    showNotification('Suggestion ajoutée ✅');
+}
+
+// Quick actions
+function handleQuickAction(action) {
+    switch(action) {
+        case 'meditate':
+            startMeditation(5 * 60); // 5 min default
+            break;
+        case 'journal':
+            document.getElementById('journalModal').style.display = 'block';
+            break;
+        case 'focus':
+            addNewTask();
+            break;
+        case 'review':
+            showHarmonyInsights();
+            break;
+        default:
+            console.warn('Action rapide inconnue:', action);
+    }
+}
+
+// Afficher insights d'harmonie / bilan court
+function showHarmonyInsights() {
+    const modal = document.getElementById('sphereModal');
+    const modalContent = document.getElementById('modalContent');
+
+    // Build a short weekly summary + one priority action using AiCoach if available
+    let summaryHtml = `<h2>📊 Bilan rapide</h2>
+        <p>Score d'harmonie : <strong>${appState.harmonyScore}%</strong></p>
+        <ul>
+            ${Object.entries(appState.spheres).map(([k,s]) => `<li>${s.icon} ${s.name} : ${s.progress}%</li>`).join('')}
+        </ul>
+    `;
+
+    if (window.AiCoach) {
+        const check = AiCoach.dailyCheckIn(appState);
+        summaryHtml += `<h3>Suggestion intelligente</h3>
+            <p>${check.reason}</p>
+            <p><strong>Action recommandée :</strong> ${check.recommendedAction.text}</p>
+            <button onclick="applyAiSuggestion()">Activer</button>
+        `;
+    } else {
+        summaryHtml += `<p>Action prioritaire suggérée : choisissez une petite action pour la sphère la plus basse.</p>`;
+    }
+
+    modalContent.innerHTML = summaryHtml;
+    modal.style.display = 'block';
+}
+
+function applyAiSuggestion() {
+    if (!window.AiCoach) return;
+    const check = AiCoach.dailyCheckIn(appState);
+    // add as a task/habit
+    const habit = {
+        id: 'habit_' + Date.now(),
+        sphereKey: getLowestSphereKey(),
+        text: check.recommendedAction.text,
+        frequency: 'once',
+        active: true,
+        createdAt: Date.now()
+    };
+    appState.habits[habit.id] = habit;
+    // also add to tasks for today
+    appState.focusTasks.unshift({
+        id: 'task_' + Date.now(),
+        text: habit.text,
+        sphereKey: habit.sphereKey,
+        completed: false,
+        createdAt: Date.now()
+    });
+    renderFocusTasks();
+    saveData();
+    showNotification('Suggestion AI ajoutée aux tâches');
+}
+
+function getLowestSphereKey() {
+    return Object.entries(appState.spheres).sort((a,b) => a[1].progress - b[1].progress)[0][0];
+}
+
+/* ----------------------------
+   Méditation : start/stop & timer (complété)
+   ---------------------------- */
+function startMeditation(seconds = 300) {
+    // seconds default 5min
+    clearInterval(appState.meditationTimer);
+    appState.meditationSeconds = seconds;
+    const timerEl = document.getElementById('meditationTimer');
+    const display = document.getElementById('timerDisplay');
+    if (!timerEl || !display) return;
+
+    timerEl.style.display = 'block';
+    function updateDisplay() {
+        const mm = String(Math.floor(appState.meditationSeconds / 60)).padStart(2, '0');
+        const ss = String(appState.meditationSeconds % 60).padStart(2, '0');
+        display.textContent = `${mm}:${ss}`;
+    }
+
+    updateDisplay();
+    appState.meditationTimer = setInterval(() => {
+        appState.meditationSeconds--;
+        updateDisplay();
+        if (appState.meditationSeconds <= 0) {
+            stopMeditation(true);
+        }
+    }, 1000);
+
+    showNotification('Méditation démarrée 🧘');
+}
+
+function stopMeditation(completed = false) {
+    clearInterval(appState.meditationTimer);
+    appState.meditationTimer = null;
+    appState.meditationSeconds = 0;
+    const timerEl = document.getElementById('meditationTimer');
+    if (timerEl) timerEl.style.display = 'none';
+    if (completed) {
+        // register a small insight: increment meditation count (simple)
+        if (!appState.insights.meditationCount) appState.insights.meditationCount = 0;
+        appState.insights.meditationCount++;
+        renderInsights();
+        saveData();
+        showNotification('Session de méditation terminée — bien joué ✨');
+    } else {
+        showNotification('Méditation arrêtée');
+    }
+}
+
+/* ----------------------------
+   Journal (save/close)
+   ---------------------------- */
+function saveJournal() {
+    const mood = document.getElementById('moodRange') ? parseInt(document.getElementById('moodRange').value, 10) : null;
+    const gratitude = document.getElementById('gratitudeText') ? document.getElementById('gratitudeText').value.trim() : '';
+    const reflection = document.getElementById('reflectionText') ? document.getElementById('reflectionText').value.trim() : '';
+
+    const entry = {
+        id: 'journal_' + Date.now(),
+        createdAt: Date.now(),
+        mood,
+        gratitude,
+        reflection
+    };
+    appState.journalEntries.unshift(entry);
+
+    // update mood insight quickly (simple rolling average)
+    if (mood) {
+        if (!appState.insights.moodRecent) appState.insights.moodRecent = [];
+        appState.insights.moodRecent.unshift(mood);
+        appState.insights.moodRecent = appState.insights.moodRecent.slice(0, 20);
+        const avg = Math.round(appState.insights.moodRecent.reduce((a,b) => a+b,0)/appState.insights.moodRecent.length);
+        appState.insights.mood = { icon: '😊', label: 'Humeur', value: avg + '/10', unit: '', trend: 'neutral' };
+    }
+
+    saveData();
+    document.getElementById('journalModal').style.display = 'none';
+    showNotification('Journal sauvegardé ✍️');
+    renderInsights();
+}
+
+function closeJournal() {
+    document.getElementById('journalModal').style.display = 'none';
+}
+
+/* ----------------------------
+   Notifications & util (simple)
+   ---------------------------- */
+function showNotification(message) {
+    // preference to NotificationService if present
+    if (window.NotificationService && NotificationService.isSupported()) {
+        NotificationService.show(message);
+        return;
+    }
+    // fallback toast-like small in-page message
+    try {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.position = 'fixed';
+        toast.style.right = '20px';
+        toast.style.bottom = '20px';
+        toast.style.background = 'rgba(17,24,39,0.95)';
+        toast.style.color = '#fff';
+        toast.style.padding = '12px 16px';
+        toast.style.borderRadius = '10px';
+        toast.style.boxShadow = '0 6px 18px rgba(0,0,0,0.2)';
+        toast.style.zIndex = 9999;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    } catch (e) {
+        // ultimate fallback
+        console.log('Notification:', message);
+    }
+}
+
+/* ----------------------------
+   Progress update (simple)
+   ---------------------------- */
+function updateProgress() {
+    // Basic behavior: recalc harmony and save
+    calculateHarmonyScore();
+    saveData();
+}
+
+/* ----------------------------
+   Small animation on load (existant)
+   ---------------------------- */
+function animateOnLoad() {
+    // subtle animation: stagger sphere appearance
+    const spheres = document.querySelectorAll('.sphere');
+    spheres.forEach((s, i) => {
+        s.style.opacity = 0;
+        s.style.transform += ' scale(0.9)';
+        setTimeout(() => {
+            s.style.opacity = 1;
+            s.style.transform = s.style.transform.replace(' scale(0.9)', '');
+        }, i * 80);
+    });
+}
+
+/* ----------------------------
+   Expose some helpers globally for components to call
+   ---------------------------- */
+window.Harmonia = window.Harmonia || {};
+window.Harmonia.appState = appState;
+window.Harmonia.saveData = saveData;
+window.Harmonia.addTask = addNewTask;
+window.Harmonia.addActivity = addActivity;
+window.Harmonia.quickAddFromSuggestion = quickAddFromSuggestion;
+window.Harmonia.showNotification = showNotification;
