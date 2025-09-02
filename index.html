@@ -28,11 +28,12 @@
                 <div class="header-info">
                     <span class="date" id="currentDate"></span>
                     <span class="time" id="currentTime"></span>
+                    <button id="openSettingsBtn" class="settings-btn" title="Paramètres">⚙️</button>
                 </div>
             </div>
         </header>
 
-        <!-- Score d'Harmonie Global -->
+        <!-- Harmony Score -->
         <div class="harmony-score">
             <div class="score-circle">
                 <svg viewBox="0 0 200 200">
@@ -52,7 +53,6 @@
             <div class="mandala-container">
                 <!-- Les 6 sphères seront générées dynamiquement -->
                 <div id="spheresContainer"></div>
-                
                 <!-- Centre du Mandala -->
                 <div class="mandala-center">
                     <button class="harmony-btn" id="harmonyBtn">
@@ -101,6 +101,16 @@
             </div>
         </div>
 
+        <!-- Analytics Dashboard (minimal) -->
+        <div class="analytics-panel" id="analyticsPanel">
+            <h2>Analytics</h2>
+            <div id="analyticsDashboard"></div>
+            <div style="text-align:right; margin-top:8px;">
+                <button class="btn-secondary" id="exportEventsBtn">Exporter événements</button>
+                <button class="btn-secondary" id="clearEventsBtn">Effacer événements</button>
+            </div>
+        </div>
+
         <!-- Timer de Méditation -->
         <div class="meditation-timer" id="meditationTimer" style="display: none;">
             <h3>Méditation en cours</h3>
@@ -126,14 +136,58 @@
                 <label>Comment vous sentez-vous ? (1-10)</label>
                 <input type="range" id="moodRange" min="1" max="10" value="7">
                 <span id="moodValue">7</span>
-                
+
                 <label>Gratitudes du jour</label>
                 <textarea id="gratitudeText" placeholder="Je suis reconnaissant pour..."></textarea>
-                
+
                 <label>Réflexions</label>
                 <textarea id="reflectionText" placeholder="Aujourd'hui, j'ai appris que..."></textarea>
-                
+
                 <button class="btn-primary" onclick="saveJournal()">Sauvegarder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'ajout de tâche (remplace prompt) -->
+    <div class="modal" id="taskModal" aria-hidden="true">
+        <div class="modal-content">
+            <span class="close" id="taskModalClose">&times;</span>
+            <h2>Nouvelle tâche</h2>
+            <form id="taskForm">
+                <label for="taskText">Que souhaitez-vous accomplir ?</label>
+                <input id="taskText" name="taskText" type="text" placeholder="Ex: Marcher 10 minutes" required>
+
+                <label for="taskSphere">Associer une sphère (optionnel)</label>
+                <select id="taskSphere" name="taskSphere">
+                    <option value="">Aucune</option>
+                </select>
+
+                <label for="taskWhen">Quand ? (optionnel)</label>
+                <input id="taskWhen" name="taskWhen" type="datetime-local">
+
+                <div style="display:flex; gap:8px; margin-top:12px;">
+                    <button type="submit" class="btn-primary">Ajouter</button>
+                    <button type="button" class="btn-secondary" id="taskCancelBtn">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Settings (IA opt-in & API URL) -->
+    <div class="modal" id="settingsModal" aria-hidden="true">
+        <div class="modal-content">
+            <span class="close" id="settingsModalClose">&times;</span>
+            <h2>Paramètres</h2>
+            <div class="settings-row">
+                <label><input type="checkbox" id="aiEnabledCheckbox"> Activer l'assistant intelligent (IA)</label>
+                <p class="muted">L'IA enverra des données minimales (état des sphères) au serveur que vous configurez. Activation explicite requise.</p>
+            </div>
+            <div class="settings-row">
+                <label for="aiApiUrl">URL de l'API IA (ex: https://your-server.example.com/api/ai-suggest)</label>
+                <input id="aiApiUrl" type="url" placeholder="https://...">
+            </div>
+            <div style="margin-top:12px;">
+                <button class="btn-primary" id="saveSettingsBtn">Sauvegarder</button>
             </div>
         </div>
     </div>
@@ -141,9 +195,11 @@
     <!-- Core services & components (load before main script) -->
     <script src="src/services/storage.js"></script>
     <script src="src/services/notifications.js"></script>
+    <script src="src/services/analytics.js"></script>
     <script src="src/services/ai_coach.js"></script>
     <script src="src/components/habits.js"></script>
     <script src="src/components/onboarding.js"></script>
+    <script src="src/components/analytics.js"></script>
 
     <!-- Main app script -->
     <script src="script.js"></script>
