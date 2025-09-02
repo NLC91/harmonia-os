@@ -1,80 +1,120 @@
-// Harmonia OS - JavaScript Interactif Complet
-
-// Fonctions manquantes ajoutées pour robustesse
-function animateOnLoad() {
-    // Animation d'entrée (optionnel)
-}
-function getSphereDetails(sphereType) {
-    // Détail statique ou vide
-    return "";
-}
-function showHarmonyInsights() {
-    alert("Fonctionnalité à implémenter : Insights Harmonie.");
-}
-function updateProgress() {
-    // Optionnel : peut recalculer le score, etc.
-}
+// Harmonia OS - JavaScript Version Finale
 
 // État de l'application
 const appState = {
     spheres: {
-        health: { name: 'Santé', progress: 60, icon: '💪' },
-        spiritual: { name: 'Spiritualité', progress: 40, icon: '🧘' },
-        family: { name: 'Famille', progress: 80, icon: '👨‍👩‍👧' },
-        social: { name: 'Social', progress: 45, icon: '👥' },
-        work: { name: 'Professionnel', progress: 90, icon: '💼' },
-        finance: { name: 'Finances', progress: 70, icon: '💰' }
+        health: { name: 'Santé', progress: 60, icon: '💪', color: '#10b981' },
+        spiritual: { name: 'Spiritualité', progress: 40, icon: '🧘', color: '#8b5cf6' },
+        family: { name: 'Famille', progress: 80, icon: '👨‍👩‍👧', color: '#ec4899' },
+        social: { name: 'Social', progress: 45, icon: '👥', color: '#3b82f6' },
+        work: { name: 'Professionnel', progress: 90, icon: '💼', color: '#f59e0b' },
+        finance: { name: 'Finances', progress: 70, icon: '💰', color: '#22c55e' }
     },
     harmonyScore: 0,
-    focusTasks: [
-        { id: 1, text: 'Séance de sport 30 min', completed: false },
-        { id: 2, text: 'Appeler Maman', completed: false },
-        { id: 3, text: 'Finaliser présentation', completed: false }
-    ],
+    focusTasks: [],
     insights: {
-        sleep: { value: 7.5, unit: 'h', trend: 'up' },
-        steps: { value: 4500, unit: 'pas', trend: 'down' },
-        water: { value: 5, unit: '/8 verres', trend: 'neutral' },
-        mood: { value: 'Positive', unit: '', trend: 'up' }
-    }
+        sleep: { icon: '😴', label: 'Sommeil', value: 7.5, unit: 'h', trend: 'up' },
+        steps: { icon: '🏃', label: 'Activité', value: 4500, unit: ' pas', trend: 'down' },
+        water: { icon: '💧', label: 'Hydratation', value: 5, unit: '/8 verres', trend: 'neutral' },
+        mood: { icon: '😊', label: 'Humeur', value: 'Positive', unit: '', trend: 'up' }
+    },
+    meditationTimer: null,
+    meditationSeconds: 0
 };
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
 });
 
 function initializeApp() {
     loadSavedData();
+    renderSpheres();
+    renderFocusTasks();
+    renderInsights();
     calculateHarmonyScore();
     setupEventListeners();
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
     animateOnLoad();
-    updateAllDisplays();
 }
 
-// Sauvegarde et chargement des données
-function saveData() {
-    try {
-        localStorage.setItem('harmoniaState', JSON.stringify(appState));
-    } catch (e) {
-        alert("Impossible de sauvegarder les données (localStorage plein ou indisponible).");
+// Rendu des sphères
+function renderSpheres() {
+    const container = document.getElementById('spheresContainer');
+    container.innerHTML = '';
+    
+    Object.entries(appState.spheres).forEach(([key, sphere], index) => {
+        const angle = (index * 60); // 360° / 6 sphères
+        const sphereElement = document.createElement('div');
+        sphereElement.className = 'sphere';
+        sphereElement.dataset.sphere = key;
+        sphereElement.style.setProperty('--angle', `${angle}deg`);
+        sphereElement.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(180px) rotate(-${angle}deg)`;
+        
+        sphereElement.innerHTML = `
+            <div class="sphere-content">
+                <div class="sphere-icon">${sphere.icon}</div>
+                <h3>${sphere.name}</h3>
+                <div class="sphere-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${sphere.progress}%"></div>
+                    </div>
+                    <span class="progress-text">${sphere.progress}%</span>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(sphereElement);
+    });
+}
+
+// Rendu des tâches
+function renderFocusTasks() {
+    const container = document.getElementById('focusItems');
+    
+    if (appState.focusTasks.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Aucune tâche pour le moment</p>';
+        return;
     }
+    
+    container.innerHTML = appState.focusTasks.map((task, index) => `
+        <div class="focus-item">
+            <input type="checkbox" id="task${index}" ${task.completed ? 'checked' : ''}>
+            <label for="task${index}">${task.text}</label>
+            <button class="delete-task" onclick="deleteTask(${index})">×</button>
+        </div>
+    `).join('');
+    
+    // Réattacher les event listeners
+    document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
+        checkbox.addEventListener('change', function() {
+            appState.focusTasks[index].completed = this.checked;
+            updateProgress();
+            saveData();
+        });
+    });
 }
 
-function loadSavedData() {
-    const saved = localStorage.getItem('harmoniaState');
-    if (saved) {
-        try {
-            const savedState = JSON.parse(saved);
-            if (typeof savedState === 'object' && savedState !== null) {
-                Object.assign(appState, savedState);
-            }
-        } catch (e) {
-            localStorage.removeItem('harmoniaState');
-            alert("Des données corrompues ont été trouvées. Les données ont été réinitialisées.");
-        }
+// Rendu des insights
+function renderInsights() {
+    const container = document.getElementById('insightCards');
+    
+    container.innerHTML = Object.entries(appState.insights).map(([key, insight]) => `
+        <div class="insight-card">
+            <div class="insight-icon">${insight.icon}</div>
+            <h4>${insight.label}</h4>
+            <p>${insight.value}${insight.unit}</p>
+            <span class="trend ${insight.trend}">${getTrendText(insight.trend)}</span>
+        </div>
+    `).join('');
+}
+
+function getTrendText(trend) {
+    switch(trend) {
+        case 'up': return '↑ En hausse';
+        case 'down': return '↓ En baisse';
+        default: return '→ Stable';
     }
 }
 
@@ -83,21 +123,19 @@ function calculateHarmonyScore() {
     const scores = Object.values(appState.spheres).map(s => s.progress);
     const average = scores.reduce((a, b) => a + b, 0) / scores.length;
     appState.harmonyScore = Math.round(average);
-
+    
     updateHarmonyDisplay();
-    saveData();
 }
 
 function updateHarmonyDisplay() {
     const scoreElement = document.getElementById('harmonyScore');
     const messageElement = document.getElementById('scoreMessage');
     const circleElement = document.getElementById('harmonyCircle');
-
-    if (!scoreElement || !messageElement || !circleElement) return;
-
-    scoreElement.textContent = appState.harmonyScore;
-
-    // Message personnalisé selon le score
+    
+    // Animation du nombre
+    animateNumber(scoreElement, appState.harmonyScore);
+    
+    // Message personnalisé
     let message = '';
     if (appState.harmonyScore >= 80) {
         message = 'Excellent équilibre de vie ! 🌟';
@@ -109,19 +147,29 @@ function updateHarmonyDisplay() {
         message = 'Prenons soin de votre équilibre 💪';
     }
     messageElement.textContent = message;
-
+    
     // Animation du cercle
     const circumference = 2 * Math.PI * 90;
     const offset = circumference - (appState.harmonyScore / 100) * circumference;
     circleElement.style.strokeDashoffset = offset;
 }
 
-// Mise à jour de tous les affichages
-function updateAllDisplays() {
-    Object.entries(appState.spheres).forEach(([key, sphere]) => {
-        updateSphereDisplay(key, sphere.progress);
-    });
-    updateFocusTasks();
+// Animation des nombres
+function animateNumber(element, target) {
+    const current = parseInt(element.textContent) || 0;
+    const increment = target > current ? 1 : -1;
+    const steps = Math.abs(target - current);
+    
+    if (steps === 0) return;
+    
+    let step = 0;
+    const timer = setInterval(() => {
+        step++;
+        element.textContent = current + (increment * step);
+        if (step >= steps) {
+            clearInterval(timer);
+        }
+    }, 20);
 }
 
 // Date et heure
@@ -129,9 +177,7 @@ function updateDateTime() {
     const now = new Date();
     const dateElement = document.getElementById('currentDate');
     const timeElement = document.getElementById('currentTime');
-
-    if (!dateElement || !timeElement) return;
-
+    
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     dateElement.textContent = now.toLocaleDateString('fr-FR', options);
     timeElement.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -139,77 +185,81 @@ function updateDateTime() {
 
 // Event Listeners
 function setupEventListeners() {
-    document.querySelectorAll('.sphere').forEach(sphere => {
-        sphere.addEventListener('click', function() {
-            const sphereType = this.dataset.sphere;
+    // Sphères
+    document.addEventListener('click', function(e) {
+        const sphere = e.target.closest('.sphere');
+        if (sphere) {
+            const sphereType = sphere.dataset.sphere;
             openSphereModal(sphereType);
-        });
+        }
     });
-
-    const harmonyBtn = document.getElementById('harmonyBtn');
-    if (harmonyBtn) {
-        harmonyBtn.addEventListener('click', function() {
-            showHarmonyInsights();
-        });
-    }
-
+    
+    // Bouton central
+    document.getElementById('harmonyBtn').addEventListener('click', showHarmonyInsights);
+    
+    // Actions rapides
     document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const action = this.dataset.action;
             handleQuickAction(action);
         });
     });
-
-    document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
-        checkbox.addEventListener('change', function() {
-            appState.focusTasks[index].completed = this.checked;
-            updateProgress();
-            saveData();
+    
+    // Ajouter une tâche
+    document.getElementById('addTaskBtn').addEventListener('click', addNewTask);
+    
+    // Modal
+    document.querySelectorAll('.modal .close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', function() {
+            this.closest('.modal').style.display = 'none';
         });
     });
-
-    const modal = document.getElementById('sphereModal');
-    const closeBtn = document.querySelector('.close');
-
-    if (modal && closeBtn) {
-        closeBtn.addEventListener('click', () => modal.style.display = 'none');
-        window.addEventListener('click', (e) => {
-            if (e.target === modal) modal.style.display = 'none';
+    
+    window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+    });
+    
+    // Journal mood slider
+    const moodRange = document.getElementById('moodRange');
+    if (moodRange) {
+        moodRange.addEventListener('input', function() {
+            document.getElementById('moodValue').textContent = this.value;
         });
     }
 }
 
-// Modal des sphères INTERACTIVE
+// Modal des sphères
 function openSphereModal(sphereType) {
     const modal = document.getElementById('sphereModal');
     const modalContent = document.getElementById('modalContent');
     const sphere = appState.spheres[sphereType];
-
-    if (!modal || !modalContent || !sphere) return;
-
+    
     modalContent.innerHTML = `
         <h2>${sphere.icon} ${sphere.name}</h2>
         <div class="modal-progress">
-            <h3>Niveau actuel : ${sphere.progress}%</h3>
+            <h3>Niveau actuel : <span id="currentProgress">${sphere.progress}%</span></h3>
             <input type="range" 
                    id="sphereSlider" 
                    min="0" 
                    max="100" 
                    value="${sphere.progress}" 
-                   class="sphere-slider"
-                   oninput="updateSphereProgress('${sphereType}', this.value)">
+                   class="sphere-slider">
             <div class="progress-large">
                 <div class="progress-bar-large">
                     <div class="progress-fill-large" id="modalProgressFill" style="width: ${sphere.progress}%"></div>
                 </div>
-                <span class="progress-text-large" id="modalProgressText">${sphere.progress}%</span>
             </div>
         </div>
         <div class="sphere-details">
             ${getSphereDetails(sphereType)}
         </div>
         <div class="sphere-actions">
-            <button class="btn-primary" onclick="addActivity('${sphereType}')">
+            <button class="btn-primary" onclick="saveSphereProgress('${sphereType}')">
+                💾 Sauvegarder
+            </button>
+            <button class="btn-secondary" onclick="addActivity('${sphereType}')">
                 + Ajouter une activité
             </button>
             <button class="btn-secondary" onclick="showSuggestions('${sphereType}')">
@@ -217,199 +267,102 @@ function openSphereModal(sphereType) {
             </button>
         </div>
     `;
-
+    
+    // Event listener pour le slider
+    const slider = document.getElementById('sphereSlider');
+    slider.addEventListener('input', function() {
+        document.getElementById('currentProgress').textContent = this.value + '%';
+        document.getElementById('modalProgressFill').style.width = this.value + '%';
+    });
+    
     modal.style.display = 'block';
 }
 
-// Mise à jour du progrès d'une sphère
-function updateSphereProgress(sphereType, value) {
-    const progress = parseInt(value);
-    if (isNaN(progress)) return;
-    appState.spheres[sphereType].progress = progress;
-
-    const modalProgressFill = document.getElementById('modalProgressFill');
-    const modalProgressText = document.getElementById('modalProgressText');
-    if (modalProgressFill && modalProgressText) {
-        modalProgressFill.style.width = `${progress}%`;
-        modalProgressText.textContent = `${progress}%`;
-    }
-
-    updateSphereDisplay(sphereType, progress);
+// Sauvegarder le progrès
+function saveSphereProgress(sphereType) {
+    const slider = document.getElementById('sphereSlider');
+    const newProgress = parseInt(slider.value);
+    
+    appState.spheres[sphereType].progress = newProgress;
+    updateSphereDisplay(sphereType, newProgress);
     calculateHarmonyScore();
+    saveData();
+    
+    document.getElementById('sphereModal').style.display = 'none';
+    showNotification(`✅ ${appState.spheres[sphereType].name} mis à jour !`);
 }
 
+// Mise à jour de l'affichage d'une sphère
 function updateSphereDisplay(sphereType, progress) {
     const sphere = document.querySelector(`[data-sphere="${sphereType}"]`);
     if (sphere) {
         const progressBar = sphere.querySelector('.progress-fill');
         const progressText = sphere.querySelector('.progress-text');
-
-        if (progressBar) progressBar.style.width = `${progress}%`;
-        if (progressText) progressText.textContent = `${progress}%`;
+        
+        progressBar.style.width = `${progress}%`;
+        progressText.textContent = `${progress}%`;
     }
 }
 
-// Ajouter une activité
-function addActivity(sphereType) {
-    const activity = prompt(`Quelle activité avez-vous réalisée pour ${appState.spheres[sphereType].name} ?`);
-    if (activity) {
-        const currentProgress = appState.spheres[sphereType].progress;
-        const newProgress = Math.min(100, currentProgress + 10);
-        updateSphereProgress(sphereType, newProgress);
-
-        alert(`✅ Activité ajoutée ! ${appState.spheres[sphereType].name} +10%`);
-
-        const modal = document.getElementById('sphereModal');
-        if (modal) modal.style.display = 'none';
-    }
-}
-
-// Afficher les suggestions
-function showSuggestions(sphereType) {
-    const suggestions = {
-        health: [
-            "🏃 Faire 30 minutes de marche rapide",
-            "🥗 Préparer un repas équilibré",
-            "💧 Boire 2 litres d'eau aujourd'hui",
-            "😴 Se coucher 30 minutes plus tôt"
-        ],
-        spiritual: [
-            "🧘 Méditer 15 minutes",
-            "📖 Lire un chapitre inspirant",
-            "🙏 Pratiquer la gratitude (3 choses)",
-            "🌳 Marche contemplative dans la nature"
-        ],
-        family: [
-            "📞 Appeler un membre de la famille",
-            "🎲 Organiser une soirée jeux",
-            "🍽️ Dîner en famille sans téléphones",
-            "📸 Créer un album photo familial"
-        ],
-        social: [
-            "☕ Prendre un café avec un ami",
-            "💬 Envoyer un message à 3 amis",
-            "🎉 Organiser une sortie de groupe",
-            "🤝 Participer à un événement local"
-        ],
-        work: [
-            "📝 Définir 3 priorités du jour",
-            "⏰ Utiliser la technique Pomodoro",
-            "📚 Suivre une formation en ligne",
-            "🎯 Mettre à jour vos objectifs"
-        ],
-        finance: [
-            "💰 Vérifier votre budget mensuel",
-            "📊 Analyser vos dépenses",
-            "🏦 Augmenter votre épargne de 5%",
-            "📱 Annuler un abonnement inutile"
-        ]
-    };
-
-    const sphereSuggestions = suggestions[sphereType] || [];
-    const suggestionsList = sphereSuggestions.map((s, i) => `${i + 1}. ${s}`).join('\n');
-
-    alert(`💡 Suggestions pour ${appState.spheres[sphereType].name} :\n\n${suggestionsList}`);
-}
-
-// Actions rapides INTERACTIVES
-function handleQuickAction(action) {
-    switch(action) {
-        case 'meditate':
-            startMeditation();
-            break;
-        case 'journal':
-            openJournal();
-            break;
-        case 'focus':
-            startFocusMode();
-            break;
-        case 'review':
-            showInteractiveReview();
-            break;
-    }
-}
-
-// Méditation interactive
-function startMeditation() {
-    const duration = prompt('⏱️ Durée de méditation (en minutes) :', '10');
-    if (duration && !isNaN(duration)) {
-        alert(`🧘 Méditation de ${duration} minutes lancée...\n\nFermez les yeux et concentrez-vous sur votre respiration.`);
-
-        const newProgress = Math.min(100, appState.spheres.spiritual.progress + 5);
-        updateSphereProgress('spiritual', newProgress);
-
-        setTimeout(() => {
-            alert('🔔 Méditation terminée ! Bien joué !');
-        }, 3000);
-    }
-}
-
-// Journal interactif
-function openJournal() {
-    const mood = prompt('Comment vous sentez-vous ? (1-10) :', '7');
-    const gratitude = prompt('Citez une chose pour laquelle vous êtes reconnaissant :');
-    const reflection = prompt('Une réflexion du jour :');
-
-    if (mood && gratitude) {
-        appState.insights.mood.value = parseInt(mood) >= 7 ? 'Positive' : 'Neutre';
-        alert('📝 Journal sauvegardé avec succès !');
-
-        const newProgress = Math.min(100, appState.spheres.spiritual.progress + 3);
-        updateSphereProgress('spiritual', newProgress);
-    }
-}
-
-// Mode Focus
-function startFocusMode() {
-    const task = prompt('Sur quoi voulez-vous vous concentrer ?');
-    if (task) {
-        alert(`🎯 Mode Focus activé pour : ${task}\n\nConcentrez-vous pendant 25 minutes !`);
-
-        appState.focusTasks.push({
-            id: appState.focusTasks.length + 1,
-            text: task,
-            completed: false
-        });
-
-        updateFocusTasks();
-        saveData();
-    }
-}
-
-// Mise à jour des tâches focus
-function updateFocusTasks() {
-    const container = document.querySelector('.focus-items');
-    if (!container) return;
-
-    container.innerHTML = appState.focusTasks.map((task, index) => `
-        <div class="focus-item">
-            <input type="checkbox" id="focus${index + 1}" ${task.completed ? 'checked' : ''}>
-            <label for="focus${index + 1}">${task.text}</label>
-        </div>
-    `).join('');
-
-    document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
-        checkbox.addEventListener('change', function() {
-            appState.focusTasks[index].completed = this.checked;
-            updateProgress();
-            saveData();
-        });
-    });
-}
-
-// Revue interactive
-function showInteractiveReview() {
-    const completedTasks = appState.focusTasks.filter(t => t.completed).length;
-    const totalTasks = appState.focusTasks.length;
-
-    const review = `
-📊 BILAN INTERACTIF DU JOUR
-Tâches réalisées : ${completedTasks} / ${totalTasks}
-Score d'harmonie actuel : ${appState.harmonyScore}
-Humeur du jour : ${appState.insights.mood.value}
-
-Bravo pour vos progrès ! Gardez le cap 🌱
-`;
-
-    alert(review);
-}
+// Détails des sphères
+function getSphereDetails(sphereType) {
+    const details = {
+        health: `
+            <h3>📊 Statistiques Santé</h3>
+            <ul>
+                <li>🛌 Sommeil moyen : 7h30</li>
+                <li>👟 Pas quotidiens : 4,500</li>
+                <li>💧 Hydratation : 5/8 verres</li>
+                <li>🏃 Dernière séance sport : Il y a 2 jours</li>
+            </ul>
+            <h3>🎯 Objectifs</h3>
+            <ul>
+                <li>✅ 3 séances de sport/semaine</li>
+                <li>⏳ 8h de sommeil/nuit</li>
+                <li>❌ 10,000 pas/jour</li>
+            </ul>
+        `,
+        spiritual: `
+            <h3>🧘 Pratique Spirituelle</h3>
+            <ul>
+                <li>🧘 Méditations cette semaine : 3/7</li>
+                <li>📝 Journal de gratitude : 5/7</li>
+                <li>🤔 Temps de réflexion : 2h</li>
+            </ul>
+            <h3>📅 Prochaines pratiques</h3>
+            <ul>
+                <li>🌙 Méditation guidée ce soir</li>
+                <li>📖 Lecture spirituelle dimanche</li>
+            </ul>
+        `,
+        family: `
+            <h3>👨‍👩‍👧 Moments Famille</h3>
+            <ul>
+                <li>🍽️ Dîners en famille : 5/7 cette semaine</li>
+                <li>🎮 Activité commune : Samedi dernier</li>
+                <li>📞 Appels famille éloignée : 2 ce mois</li>
+            </ul>
+            <h3>📅 À planifier</h3>
+            <ul>
+                <li>🎬 Sortie cinéma ce weekend</li>
+                <li>🎂 Anniversaire de Papa (dans 2 semaines)</li>
+            </ul>
+        `,
+        social: `
+            <h3>👥 Vie Sociale</h3>
+            <ul>
+                <li>🎉 Sorties ce mois : 3</li>
+                <li>🤝 Nouveaux contacts : 2</li>
+                <li>📅 Événements à venir : 1</li>
+            </ul>
+            <h3>💫 Cercle social</h3>
+            <ul>
+                <li>👫 Amis proches contactés : 4/6</li>
+                <li>🎊 Dernière grande sortie : Il y a 10 jours</li>
+            </ul>
+        `,
+        work: `
+            <h3>💼 Performance Professionnelle</h3>
+            <ul>
+                <li>✅ Projets complétés : 8/10</li>
+                <li>⏱️ Heures focus : 
