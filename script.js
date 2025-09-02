@@ -29,6 +29,7 @@ function initializeApp() {
     calculateHarmonyScore();
     setupEventListeners();
     animateOnLoad();
+    loadSavedData();
 }
 
 // Calcul du score d'harmonie
@@ -105,6 +106,7 @@ function setupEventListeners() {
         checkbox.addEventListener('change', function() {
             appState.focusTasks[index].completed = this.checked;
             updateProgress();
+            saveData();
         });
     });
     
@@ -194,4 +196,50 @@ function getSphereDetails(sphereType) {
         social: `
             <h3>Vie Sociale</h3>
             <ul>
-                <li>Sorties ce
+                <li>Sorties ce mois : 3</li>
+                <li>Nouveaux contacts : 2</li>
+                <li>Événements à venir : 1</li>
+            </ul>
+            <h3>Cercle social</h3>
+            <ul>
+                <li>Amis proches contactés : 4/6</li>
+                <li>Dernière grande sortie : Il y a 10 jours</li>
+            </ul>
+        `,
+        work: `
+            <h3>Performance Professionnelle</h3>
+            <ul>
+                <li>Projets complétés : 8/10</li>
+                <li>Heures focus : 32h cette semaine</li>
+                <li>Formation continue : 2h</li>
+            </ul>
+            <h3>Objectifs trimestriels</h3>
+            <ul>
+                <li>✅ Livrer projet Alpha</li>
+                <li>⏳ Certification en cours</li>
+                <li>📅 Review annuelle dans 1 mois</li>
+            </ul>
+        `,
+        finance: `
+            <h3>Situation Financière</h3>
+            <ul>
+                <li>Budget respecté : 85%</li>
+                <li>Épargne mensuelle : 500€</li>
+                <li>Investissements : +12% YTD</li>
+            </ul>
+            <h3>Objectifs financiers</h3>
+            <ul>
+                <li>Emergency fund : 3,000€/5,000€</li>
+                <li>Projet voyage : 1,200€/3,000€</li>
+            </ul>
+        `
+    };
+    
+    return details[sphereType] || '<p>Détails à venir...</p>';
+}
+
+// Actions rapides
+function handleQuickAction(action) {
+    switch(action) {
+        case 'meditate':
+            alert('🧘 Lancement de la méditation guidée...\n\nFermez les yeux et respirez 
