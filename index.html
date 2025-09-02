@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Harmonia OS - Votre Système de Vie</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#6366f1" />
 </head>
 <body>
     <!-- SVG Gradients -->
@@ -137,6 +138,14 @@
         </div>
     </div>
 
+    <!-- Core services & components (load before main script) -->
+    <script src="src/services/storage.js"></script>
+    <script src="src/services/notifications.js"></script>
+    <script src="src/services/ai_coach.js"></script>
+    <script src="src/components/habits.js"></script>
+    <script src="src/components/onboarding.js"></script>
+
+    <!-- Main app script -->
     <script src="script.js"></script>
 </body>
 </html>
