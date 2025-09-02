@@ -1,0 +1,236 @@
+/* Suite du CSS */
+.harmony-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px rgba(99, 102, 241, 0.5);
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    background: var(--white);
+    border: 2px solid #e5e7eb;
+    border-radius: 15px;
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.action-btn:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+}
+
+.action-icon {
+    font-size: 24px;
+}
+
+/* Today's Focus */
+.today-focus {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.today-focus h2 {
+    margin-bottom: 20px;
+    color: var(--dark);
+}
+
+.focus-items {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.focus-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f9fafb;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.focus-item:hover {
+    background: #f3f4f6;
+}
+
+.focus-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.focus-item label {
+    cursor: pointer;
+    flex: 1;
+    font-size: 16px;
+}
+
+.focus-item input[type="checkbox"]:checked + label {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+
+/* Insights */
+.insights {
+    margin-bottom: 40px;
+}
+
+.insights h2 {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.insight-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.insight-card {
+    background: var(--white);
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.insight-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+.insight-card h4 {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 5px;
+}
+
+.insight-card p {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.trend {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 5px;
+}
+
+.trend.up {
+    color: var(--success);
+    background: #d1fae5;
+}
+
+.trend.down {
+    color: var(--danger);
+    background: #fee2e2;
+}
+
+.trend.neutral {
+    color: var(--warning);
+    background: #fef3c7;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: var(--white);
+    margin: 5% auto;
+    padding: 40px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    position: relative;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close:hover {
+    color: #000;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .mandala-container {
+        width: 350px;
+        height: 350px;
+    }
+    
+    .sphere {
+        width: 100px;
+        height: 100px;
+        transform: translate(-50%, -50%) rotate(var(--angle)) translateX(120px) rotate(calc(-1 * var(--angle)));
+    }
+    
+    .sphere-icon {
+        font-size: 24px;
+    }
+    
+    .insight-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Gradient SVG */
+svg {
+    width: 0;
+    height: 0;
+    position: absolute;
+}
