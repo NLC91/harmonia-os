@@ -1,6 +1,9 @@
-// Harmonia OS - JavaScript Version Finale (avec fonctions manquantes ajoutées)
+// Harmonia OS - Main script (updated)
+// - Replaced prompt flows by a task modal
+// - Integrated AnalyticsService tracking
+// - Uses AiCoach.requestSuggestion (server call when enabled)
 
-// État de l'application
+// État de l'application (unchanged)
 const appState = {
     spheres: {
         health: { name: 'Santé', progress: 60, icon: '💪', color: '#10b981' },
@@ -23,7 +26,9 @@ const appState = {
     journalEntries: [],
     habits: {}, // habitId => habit object
     preferences: {
-        onboardingCompleted: false
+        onboardingCompleted: false,
+        aiEnabled: false,
+        aiApiUrl: ''
     }
 };
 
@@ -46,8 +51,20 @@ function initializeApp() {
     setInterval(updateDateTime, 1000);
     animateOnLoad();
 
+    // populate spheres select in task modal
+    populateTaskModalSphereOptions();
+
     // Initialize optional services if available
     if (window.NotificationService) NotificationService.requestPermission();
+
+    // Mount analytics dashboard
+    if (window.Analytics && typeof window.Analytics.mount === 'function') {
+        window.Analytics.mount('analyticsDashboard');
+    }
+
+    // settings: apply checkboxes
+    applySettingsUI();
+
     if (window.Onboarding && !appState.preferences.onboardingCompleted) {
         // small delay so UI mounts first
         setTimeout(() => {
@@ -57,12 +74,15 @@ function initializeApp() {
 }
 
 /* ----------------------------
-   Rendu des sphères, tâches, insights (existant)
+   Rendu & UI helpers (unchanged mostly)
    ---------------------------- */
+// ... (renderSpheres, renderFocusTasks, renderInsights, etc. remain the same,
+//  but with hooks to track events where appropriate) ...
+
 function renderSpheres() {
     const container = document.getElementById('spheresContainer');
     container.innerHTML = '';
-    
+
     Object.entries(appState.spheres).forEach(([key, sphere], index) => {
         const angle = (index * 60); // 360° / 6 sphères
         const sphereElement = document.createElement('div');
@@ -70,7 +90,7 @@ function renderSpheres() {
         sphereElement.dataset.sphere = key;
         sphereElement.style.setProperty('--angle', `${angle}deg`);
         sphereElement.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(180px) rotate(-${angle}deg)`;
-        
+
         sphereElement.innerHTML = `
             <div class="sphere-content">
                 <div class="sphere-icon">${sphere.icon}</div>
@@ -83,19 +103,19 @@ function renderSpheres() {
                 </div>
             </div>
         `;
-        
+
         container.appendChild(sphereElement);
     });
 }
 
 function renderFocusTasks() {
     const container = document.getElementById('focusItems');
-    
+
     if (appState.focusTasks.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #9ca3af;">Aucune tâche pour le moment</p>';
         return;
     }
-    
+
     container.innerHTML = appState.focusTasks.map((task, index) => `
         <div class="focus-item" data-index="${index}">
             <input type="checkbox" id="task${index}" ${task.completed ? 'checked' : ''}>
@@ -103,7 +123,7 @@ function renderFocusTasks() {
             <button class="delete-task" data-index="${index}">×</button>
         </div>
     `).join('');
-    
+
     // Réattacher les event listeners
     document.querySelectorAll('.focus-item input').forEach((checkbox, idx) => {
         checkbox.addEventListener('change', function() {
@@ -113,6 +133,7 @@ function renderFocusTasks() {
             saveData();
             if (this.checked) {
                 if (window.NotificationService) NotificationService.cancelReminderForTask(appState.focusTasks[index]);
+                if (window.AnalyticsService) AnalyticsService.trackEvent('task_completed', { index, id: appState.focusTasks[index].id, sphereKey: appState.focusTasks[index].sphereKey });
             }
         });
     });
@@ -128,7 +149,7 @@ function renderFocusTasks() {
 
 function renderInsights() {
     const container = document.getElementById('insightCards');
-    
+
     container.innerHTML = Object.entries(appState.insights).map(([key, insight]) => `
         <div class="insight-card">
             <div class="insight-icon">${insight.icon}</div>
@@ -148,13 +169,13 @@ function getTrendText(trend) {
 }
 
 /* ----------------------------
-   Calcul du score d'harmonie (existant)
+   Score d'harmonie (idem)
    ---------------------------- */
 function calculateHarmonyScore() {
     const scores = Object.values(appState.spheres).map(s => s.progress);
     const average = scores.reduce((a, b) => a + b, 0) / scores.length;
     appState.harmonyScore = Math.round(average);
-    
+
     updateHarmonyDisplay();
 }
 
@@ -162,10 +183,10 @@ function updateHarmonyDisplay() {
     const scoreElement = document.getElementById('harmonyScore');
     const messageElement = document.getElementById('scoreMessage');
     const circleElement = document.getElementById('harmonyCircle');
-    
+
     // Animation du nombre
     animateNumber(scoreElement, appState.harmonyScore);
-    
+
     // Message personnalisé
     let message = '';
     if (appState.harmonyScore >= 80) {
@@ -178,7 +199,7 @@ function updateHarmonyDisplay() {
         message = 'Prenons soin de votre équilibre 💪';
     }
     messageElement.textContent = message;
-    
+
     // Animation du cercle
     const circumference = 2 * Math.PI * 90;
     const offset = circumference - (appState.harmonyScore / 100) * circumference;
@@ -186,15 +207,15 @@ function updateHarmonyDisplay() {
 }
 
 /* ----------------------------
-   Utilitaires (existant)
+   Utilitaires (unchanged)
    ---------------------------- */
 function animateNumber(element, target) {
     const current = parseInt(element.textContent) || 0;
     const increment = target > current ? 1 : -1;
     const steps = Math.abs(target - current);
-    
+
     if (steps === 0) return;
-    
+
     let step = 0;
     const timer = setInterval(() => {
         step++;
@@ -209,17 +230,17 @@ function updateDateTime() {
     const now = new Date();
     const dateElement = document.getElementById('currentDate');
     const timeElement = document.getElementById('currentTime');
-    
+
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     dateElement.textContent = now.toLocaleDateString('fr-FR', options);
     timeElement.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
 /* ----------------------------
-   Event Listeners & Handlers (complétés)
+   Event Listeners & Handlers (updated)
    ---------------------------- */
 function setupEventListeners() {
-    // Sphères
+    // Sphères click
     document.addEventListener('click', function(e) {
         const sphere = e.target.closest('.sphere');
         if (sphere) {
@@ -227,11 +248,11 @@ function setupEventListeners() {
             openSphereModal(sphereType);
         }
     });
-    
+
     // Bouton central
     const harmonyBtn = document.getElementById('harmonyBtn');
     if (harmonyBtn) harmonyBtn.addEventListener('click', showHarmonyInsights);
-    
+
     // Actions rapides
     document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -239,24 +260,24 @@ function setupEventListeners() {
             handleQuickAction(action);
         });
     });
-    
-    // Ajouter une tâche
+
+    // Ajouter une tâche (ouvre modal)
     const addBtn = document.getElementById('addTaskBtn');
-    if (addBtn) addBtn.addEventListener('click', addNewTask);
-    
-    // Modal close handlers (already part of HTML)
+    if (addBtn) addBtn.addEventListener('click', () => showTaskModal({}));
+
+    // Modal close handlers
     document.querySelectorAll('.modal .close').forEach(closeBtn => {
         closeBtn.addEventListener('click', function() {
             this.closest('.modal').style.display = 'none';
         });
     });
-    
+
     window.addEventListener('click', function(e) {
         if (e.target.classList.contains('modal')) {
             e.target.style.display = 'none';
         }
     });
-    
+
     // Journal mood slider
     const moodRange = document.getElementById('moodRange');
     if (moodRange) {
@@ -264,16 +285,49 @@ function setupEventListeners() {
             document.getElementById('moodValue').textContent = this.value;
         });
     }
+
+    // Task modal handlers
+    const taskForm = document.getElementById('taskForm');
+    if (taskForm) {
+        taskForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleTaskFormSubmit();
+        });
+    }
+    document.getElementById('taskCancelBtn').addEventListener('click', hideTaskModal);
+    document.getElementById('taskModalClose').addEventListener('click', hideTaskModal);
+
+    // Settings modal
+    document.getElementById('openSettingsBtn').addEventListener('click', () => {
+        document.getElementById('settingsModal').style.display = 'block';
+    });
+    document.getElementById('settingsModalClose').addEventListener('click', () => {
+        document.getElementById('settingsModal').style.display = 'none';
+    });
+    document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+
+    // Analytics export/clear
+    document.getElementById('exportEventsBtn').addEventListener('click', () => {
+        if (window.AnalyticsService) AnalyticsService.exportEvents();
+    });
+    document.getElementById('clearEventsBtn').addEventListener('click', () => {
+        if (window.AnalyticsService) {
+            if (confirm('Effacer tous les événements analytics locaux ?')) {
+                AnalyticsService.clearEvents();
+                if (window.Analytics && typeof window.Analytics.render === 'function') window.Analytics.render('analyticsDashboard');
+            }
+        }
+    });
 }
 
 /* ----------------------------
-   Modal des sphères (existant)
+   Modal des sphères (idem)
    ---------------------------- */
 function openSphereModal(sphereType) {
     const modal = document.getElementById('sphereModal');
     const modalContent = document.getElementById('modalContent');
     const sphere = appState.spheres[sphereType];
-    
+
     modalContent.innerHTML = `
         <h2>${sphere.icon} ${sphere.name}</h2>
         <div class="modal-progress">
@@ -297,7 +351,7 @@ function openSphereModal(sphereType) {
             <button class="btn-primary" onclick="saveSphereProgress('${sphereType}')">
                 💾 Sauvegarder
             </button>
-            <button class="btn-secondary" onclick="addActivity('${sphereType}')">
+            <button class="btn-secondary" onclick="showAddActivityModal('${sphereType}')">
                 + Ajouter une activité
             </button>
             <button class="btn-secondary" onclick="showSuggestions('${sphereType}')">
@@ -305,22 +359,37 @@ function openSphereModal(sphereType) {
             </button>
         </div>
     `;
-    
+
     // Event listener pour le slider
     const slider = document.getElementById('sphereSlider');
     slider.addEventListener('input', function() {
         document.getElementById('currentProgress').textContent = this.value + '%';
         document.getElementById('modalProgressFill').style.width = this.value + '%';
     });
-    
+
     modal.style.display = 'block';
 }
 
-/* ----------------------------
-   Fonctions manquantes demandées
-   ---------------------------- */
+function getSphereDetails(sphereType) {
+    // placeholder detail content; can be expanded
+    return `<p style="color: #6b7280;">Progrès actuel : ${appState.spheres[sphereType].progress}%</p>`;
+}
 
-// Persistance
+function saveSphereProgress(sphereType) {
+    const slider = document.getElementById('sphereSlider');
+    if (!slider) return;
+    const val = parseInt(slider.value, 10);
+    appState.spheres[sphereType].progress = val;
+    calculateHarmonyScore();
+    renderSpheres();
+    saveData();
+    if (window.AnalyticsService) AnalyticsService.trackEvent('sphere_updated', { sphereType, progress: val });
+    document.getElementById('sphereModal').style.display = 'none';
+}
+
+/* ----------------------------
+   Persistance (idem)
+   ---------------------------- */
 function saveData() {
     try {
         const copy = JSON.stringify(appState);
@@ -355,52 +424,73 @@ function loadSavedData() {
     }
 }
 
-// Tâches : Ajouter / Supprimer
-function addNewTask() {
-    // simple inline prompt flow (remplaçable par un vrai modal)
-    const text = window.prompt("Nouvelle tâche - Que souhaitez-vous accomplir aujourd'hui ?");
-    if (!text || !text.trim()) return;
-    const sphereKey = window.prompt("Associer une sphère (ex: health, spiritual, family, social, work, finance). Laisser vide si non applicable.") || null;
+/* ----------------------------
+   Tâches : Modal add / Supprimer (remplace prompt flows)
+   ---------------------------- */
+function populateTaskModalSphereOptions() {
+    const select = document.getElementById('taskSphere');
+    if (!select) return;
+    select.innerHTML = `<option value="">Aucune</option>` + Object.entries(appState.spheres).map(([k, s]) => `<option value="${k}">${s.icon} ${s.name}</option>`).join('');
+}
+
+function showTaskModal(prefill = {}) {
+    const modal = document.getElementById('taskModal');
+    const text = document.getElementById('taskText');
+    const sphere = document.getElementById('taskSphere');
+    const when = document.getElementById('taskWhen');
+
+    if (prefill.text) text.value = prefill.text; else text.value = '';
+    if (prefill.sphereKey) sphere.value = prefill.sphereKey; else sphere.value = '';
+    if (prefill.when) when.value = prefill.when; else when.value = '';
+
+    modal.style.display = 'block';
+    text.focus();
+}
+
+function hideTaskModal() {
+    const modal = document.getElementById('taskModal');
+    modal.style.display = 'none';
+    document.getElementById('taskForm').reset();
+}
+
+function handleTaskFormSubmit() {
+    const text = document.getElementById('taskText').value.trim();
+    const sphereKey = document.getElementById('taskSphere').value || null;
+    const when = document.getElementById('taskWhen').value || null;
+    if (!text) return;
+
     const task = {
         id: 'task_' + Date.now(),
-        text: text.trim(),
-        sphereKey: sphereKey && sphereKey.trim() ? sphereKey.trim() : null,
+        text,
+        sphereKey,
+        when,
         completed: false,
         createdAt: Date.now()
     };
     appState.focusTasks.unshift(task);
     renderFocusTasks();
     saveData();
+    if (window.AnalyticsService) AnalyticsService.trackEvent('task_added', { via: 'modal', sphereKey });
+    hideTaskModal();
     showNotification('Tâche ajoutée ✅');
 }
 
+/* deleteTask remains similar */
 function deleteTask(index) {
     if (index < 0 || index >= appState.focusTasks.length) return;
     const removed = appState.focusTasks.splice(index, 1);
     renderFocusTasks();
     saveData();
+    if (window.AnalyticsService) AnalyticsService.trackEvent('task_deleted', { id: removed[0].id, sphereKey: removed[0].sphereKey });
     showNotification('Tâche supprimée');
 }
 
-// Ajouter une activité / micro-habit dans une sphère
-function addActivity(sphereType) {
-    const activity = window.prompt(`Ajouter une activité pour ${appState.spheres[sphereType].name} :`);
-    if (!activity || !activity.trim()) return;
-    // create as a focusTask (quick integration)
-    const task = {
-        id: 'task_' + Date.now(),
-        text: activity.trim(),
-        sphereKey: sphereType,
-        completed: false,
-        createdAt: Date.now()
-    };
-    appState.focusTasks.unshift(task);
-    renderFocusTasks();
-    saveData();
-    showNotification(`Activité ajoutée à ${appState.spheres[sphereType].name}`);
+/* Add activity now opens task modal prefilled */
+function showAddActivityModal(sphereType) {
+    showTaskModal({ text: '', sphereKey: sphereType });
 }
 
-// Suggestions (utilise component Habits si présent)
+/* Suggestions (renders Habits component UI or fallback) */
 function showSuggestions(sphereType) {
     const modal = document.getElementById('sphereModal');
     const modalContent = document.getElementById('modalContent');
@@ -410,7 +500,7 @@ function showSuggestions(sphereType) {
         modal.style.display = 'block';
         window.Habits.renderTemplates('habitTemplatesContainer', sphereType);
     } else {
-        // fallback simple suggestions
+        // fallback simple suggestions (these use quickAddFromSuggestion which tracks events)
         const suggestions = {
             health: ['Boire un verre d\'eau', 'Faire 5 minutes d\'étirement'],
             spiritual: ['Méditer 5 min', 'Noter 1 gratitude'],
@@ -439,10 +529,13 @@ function quickAddFromSuggestion(sphereType, text) {
     appState.focusTasks.unshift(task);
     renderFocusTasks();
     saveData();
+    if (window.AnalyticsService) AnalyticsService.trackEvent('suggestion_added', { sphereKey: sphereType });
     showNotification('Suggestion ajoutée ✅');
 }
 
-// Quick actions
+/* ----------------------------
+   Quick actions (unchanged mostly)
+   ---------------------------- */
 function handleQuickAction(action) {
     switch(action) {
         case 'meditate':
@@ -452,7 +545,7 @@ function handleQuickAction(action) {
             document.getElementById('journalModal').style.display = 'block';
             break;
         case 'focus':
-            addNewTask();
+            showTaskModal({});
             break;
         case 'review':
             showHarmonyInsights();
@@ -462,12 +555,13 @@ function handleQuickAction(action) {
     }
 }
 
-// Afficher insights d'harmonie / bilan court
-function showHarmonyInsights() {
+/* ----------------------------
+   AI interactions: use AiCoach.requestSuggestion (which will call your configured server when enabled)
+   ---------------------------- */
+async function showHarmonyInsights() {
     const modal = document.getElementById('sphereModal');
     const modalContent = document.getElementById('modalContent');
 
-    // Build a short weekly summary + one priority action using AiCoach if available
     let summaryHtml = `<h2>📊 Bilan rapide</h2>
         <p>Score d'harmonie : <strong>${appState.harmonyScore}%</strong></p>
         <ul>
@@ -475,25 +569,29 @@ function showHarmonyInsights() {
         </ul>
     `;
 
+    // Request suggestion via AiCoach (which uses your configured apiUrl when aiEnabled is true)
+    let check;
     if (window.AiCoach) {
-        const check = AiCoach.dailyCheckIn(appState);
-        summaryHtml += `<h3>Suggestion intelligente</h3>
-            <p>${check.reason}</p>
-            <p><strong>Action recommandée :</strong> ${check.recommendedAction.text}</p>
-            <button onclick="applyAiSuggestion()">Activer</button>
-        `;
+        check = await AiCoach.requestSuggestion(appState, { aiEnabled: appState.preferences.aiEnabled, apiUrl: appState.preferences.aiApiUrl });
     } else {
-        summaryHtml += `<p>Action prioritaire suggérée : choisissez une petite action pour la sphère la plus basse.</p>`;
+        check = { recommendedAction: { text: 'Faire une petite pause', durationMin: 3 }, reason: 'Assistant local non disponible' };
     }
+
+    summaryHtml += `<h3>Suggestion intelligente</h3>
+            <p>${check.reason || ''}</p>
+            <p><strong>Action recommandée :</strong> ${check.recommendedAction.text}</p>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button onclick='applyAiSuggestion(${JSON.stringify(check).replace(/'/g, "\\'")})' class="btn-primary">Activer</button>
+                <button onclick="showTaskModal({ text: ${JSON.stringify(check.recommendedAction.text)} })" class="btn-secondary">Ajouter manuellement</button>
+            </div>
+        `;
 
     modalContent.innerHTML = summaryHtml;
     modal.style.display = 'block';
 }
 
-function applyAiSuggestion() {
-    if (!window.AiCoach) return;
-    const check = AiCoach.dailyCheckIn(appState);
-    // add as a task/habit
+function applyAiSuggestion(check) {
+    // add as a habit/task and track analytics
     const habit = {
         id: 'habit_' + Date.now(),
         sphereKey: getLowestSphereKey(),
@@ -503,7 +601,6 @@ function applyAiSuggestion() {
         createdAt: Date.now()
     };
     appState.habits[habit.id] = habit;
-    // also add to tasks for today
     appState.focusTasks.unshift({
         id: 'task_' + Date.now(),
         text: habit.text,
@@ -513,18 +610,14 @@ function applyAiSuggestion() {
     });
     renderFocusTasks();
     saveData();
+    if (window.AnalyticsService) AnalyticsService.trackEvent('ai_applied', { text: habit.text, sphereKey: habit.sphereKey });
     showNotification('Suggestion AI ajoutée aux tâches');
 }
 
-function getLowestSphereKey() {
-    return Object.entries(appState.spheres).sort((a,b) => a[1].progress - b[1].progress)[0][0];
-}
-
 /* ----------------------------
-   Méditation : start/stop & timer (complété)
+   Méditation & Journal (unchanged)
    ---------------------------- */
 function startMeditation(seconds = 300) {
-    // seconds default 5min
     clearInterval(appState.meditationTimer);
     appState.meditationSeconds = seconds;
     const timerEl = document.getElementById('meditationTimer');
@@ -557,20 +650,17 @@ function stopMeditation(completed = false) {
     const timerEl = document.getElementById('meditationTimer');
     if (timerEl) timerEl.style.display = 'none';
     if (completed) {
-        // register a small insight: increment meditation count (simple)
         if (!appState.insights.meditationCount) appState.insights.meditationCount = 0;
         appState.insights.meditationCount++;
         renderInsights();
         saveData();
         showNotification('Session de méditation terminée — bien joué ✨');
+        if (window.AnalyticsService) AnalyticsService.trackEvent('meditation_completed', {});
     } else {
         showNotification('Méditation arrêtée');
     }
 }
 
-/* ----------------------------
-   Journal (save/close)
-   ---------------------------- */
 function saveJournal() {
     const mood = document.getElementById('moodRange') ? parseInt(document.getElementById('moodRange').value, 10) : null;
     const gratitude = document.getElementById('gratitudeText') ? document.getElementById('gratitudeText').value.trim() : '';
@@ -585,7 +675,6 @@ function saveJournal() {
     };
     appState.journalEntries.unshift(entry);
 
-    // update mood insight quickly (simple rolling average)
     if (mood) {
         if (!appState.insights.moodRecent) appState.insights.moodRecent = [];
         appState.insights.moodRecent.unshift(mood);
@@ -598,6 +687,7 @@ function saveJournal() {
     document.getElementById('journalModal').style.display = 'none';
     showNotification('Journal sauvegardé ✍️');
     renderInsights();
+    if (window.AnalyticsService) AnalyticsService.trackEvent('journal_saved', {});
 }
 
 function closeJournal() {
@@ -605,15 +695,13 @@ function closeJournal() {
 }
 
 /* ----------------------------
-   Notifications & util (simple)
+   Notifications, progress and small utils (unchanged)
    ---------------------------- */
 function showNotification(message) {
-    // preference to NotificationService if present
     if (window.NotificationService && NotificationService.isSupported()) {
         NotificationService.show(message);
         return;
     }
-    // fallback toast-like small in-page message
     try {
         const toast = document.createElement('div');
         toast.textContent = message;
@@ -629,25 +717,20 @@ function showNotification(message) {
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
     } catch (e) {
-        // ultimate fallback
         console.log('Notification:', message);
     }
 }
 
-/* ----------------------------
-   Progress update (simple)
-   ---------------------------- */
 function updateProgress() {
-    // Basic behavior: recalc harmony and save
     calculateHarmonyScore();
     saveData();
+    if (window.AnalyticsService) AnalyticsService.trackEvent('harmony_recalc', { score: appState.harmonyScore });
 }
 
 /* ----------------------------
-   Small animation on load (existant)
+   Small animation on load
    ---------------------------- */
 function animateOnLoad() {
-    // subtle animation: stagger sphere appearance
     const spheres = document.querySelectorAll('.sphere');
     spheres.forEach((s, i) => {
         s.style.opacity = 0;
@@ -660,12 +743,46 @@ function animateOnLoad() {
 }
 
 /* ----------------------------
+   Settings UI (IA opt-in)
+   ---------------------------- */
+function applySettingsUI() {
+    const aiCheckbox = document.getElementById('aiEnabledCheckbox');
+    const apiUrlInput = document.getElementById('aiApiUrl');
+    if (!aiCheckbox || !apiUrlInput) return;
+    aiCheckbox.checked = !!appState.preferences.aiEnabled;
+    apiUrlInput.value = appState.preferences.aiApiUrl || '';
+}
+
+function saveSettings() {
+    const aiCheckbox = document.getElementById('aiEnabledCheckbox');
+    const apiUrlInput = document.getElementById('aiApiUrl');
+    appState.preferences.aiEnabled = !!aiCheckbox.checked;
+    appState.preferences.aiApiUrl = apiUrlInput.value ? apiUrlInput.value.trim() : '';
+    saveData();
+    document.getElementById('settingsModal').style.display = 'none';
+    showNotification('Paramètres sauvegardés');
+    if (window.AnalyticsService) AnalyticsService.trackEvent('settings_saved', { aiEnabled: appState.preferences.aiEnabled });
+}
+
+/* ----------------------------
+   Helpers
+   ---------------------------- */
+function getLowestSphereKey() {
+    return Object.entries(appState.spheres).sort((a,b) => a[1].progress - b[1].progress)[0][0];
+}
+
+/* ----------------------------
    Expose some helpers globally for components to call
    ---------------------------- */
 window.Harmonia = window.Harmonia || {};
 window.Harmonia.appState = appState;
 window.Harmonia.saveData = saveData;
-window.Harmonia.addTask = addNewTask;
-window.Harmonia.addActivity = addActivity;
+window.Harmonia.addTask = () => showTaskModal({});
+window.Harmonia.addActivity = showAddActivityModal;
 window.Harmonia.quickAddFromSuggestion = quickAddFromSuggestion;
 window.Harmonia.showNotification = showNotification;
+
+// ensure analytics UI is rendered initially
+if (window.Analytics && typeof window.Analytics.render === 'function') {
+    // will be mounted in initializeApp
+}
