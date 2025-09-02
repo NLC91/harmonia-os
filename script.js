@@ -35,20 +35,33 @@ function initializeApp() {
     loadSavedData();
     calculateHarmonyScore();
     setupEventListeners();
-    animateOnLoad();
+    animateOnLoad?.();
     updateAllDisplays();
 }
 
 // Sauvegarde et chargement des données
 function saveData() {
-    localStorage.setItem('harmoniaState', JSON.stringify(appState));
+    try {
+        localStorage.setItem('harmoniaState', JSON.stringify(appState));
+    } catch (e) {
+        alert("Impossible de sauvegarder les données (localStorage plein ou indisponible).");
+    }
 }
 
 function loadSavedData() {
     const saved = localStorage.getItem('harmoniaState');
     if (saved) {
-        const savedState = JSON.parse(saved);
-        Object.assign(appState, savedState);
+        try {
+            const savedState = JSON.parse(saved);
+            // Vérification basique pour éviter d'écraser l'état par une valeur incorrecte
+            if (typeof savedState === 'object' && savedState !== null) {
+                Object.assign(appState, savedState);
+            }
+        } catch (e) {
+            // Si parsing échoue, supprimer la donnée corrompue pour éviter de bloquer l'appli
+            localStorage.removeItem('harmoniaState');
+            alert("Des données corrompues ont été trouvées. Les données ont été réinitialisées.");
+        }
     }
 }
 
@@ -57,7 +70,7 @@ function calculateHarmonyScore() {
     const scores = Object.values(appState.spheres).map(s => s.progress);
     const average = scores.reduce((a, b) => a + b, 0) / scores.length;
     appState.harmonyScore = Math.round(average);
-    
+
     updateHarmonyDisplay();
     saveData();
 }
@@ -66,9 +79,11 @@ function updateHarmonyDisplay() {
     const scoreElement = document.getElementById('harmonyScore');
     const messageElement = document.getElementById('scoreMessage');
     const circleElement = document.getElementById('harmonyCircle');
-    
+
+    if (!scoreElement || !messageElement || !circleElement) return;
+
     scoreElement.textContent = appState.harmonyScore;
-    
+
     // Message personnalisé selon le score
     let message = '';
     if (appState.harmonyScore >= 80) {
@@ -81,7 +96,7 @@ function updateHarmonyDisplay() {
         message = 'Prenons soin de votre équilibre 💪';
     }
     messageElement.textContent = message;
-    
+
     // Animation du cercle
     const circumference = 2 * Math.PI * 90;
     const offset = circumference - (appState.harmonyScore / 100) * circumference;
@@ -94,12 +109,9 @@ function updateAllDisplays() {
     Object.entries(appState.spheres).forEach(([key, sphere]) => {
         updateSphereDisplay(key, sphere.progress);
     });
-    
+
     // Mise à jour des tâches
-    appState.focusTasks.forEach((task, index) => {
-        const checkbox = document.getElementById(`focus${index + 1}`);
-        if (checkbox) checkbox.checked = task.completed;
-    });
+    updateFocusTasks();
 }
 
 // Date et heure
@@ -107,7 +119,9 @@ function updateDateTime() {
     const now = new Date();
     const dateElement = document.getElementById('currentDate');
     const timeElement = document.getElementById('currentTime');
-    
+
+    if (!dateElement || !timeElement) return;
+
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     dateElement.textContent = now.toLocaleDateString('fr-FR', options);
     timeElement.textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -122,12 +136,15 @@ function setupEventListeners() {
             openSphereModal(sphereType);
         });
     });
-    
+
     // Bouton central
-    document.getElementById('harmonyBtn').addEventListener('click', function() {
-        showHarmonyInsights();
-    });
-    
+    const harmonyBtn = document.getElementById('harmonyBtn');
+    if (harmonyBtn) {
+        harmonyBtn.addEventListener('click', function() {
+            showHarmonyInsights?.();
+        });
+    }
+
     // Actions rapides
     document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -135,24 +152,26 @@ function setupEventListeners() {
             handleQuickAction(action);
         });
     });
-    
+
     // Focus tasks
     document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
         checkbox.addEventListener('change', function() {
             appState.focusTasks[index].completed = this.checked;
-            updateProgress();
+            updateProgress?.();
             saveData();
         });
     });
-    
+
     // Modal
     const modal = document.getElementById('sphereModal');
     const closeBtn = document.querySelector('.close');
-    
-    closeBtn.addEventListener('click', () => modal.style.display = 'none');
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) modal.style.display = 'none';
-    });
+
+    if (modal && closeBtn) {
+        closeBtn.addEventListener('click', () => modal.style.display = 'none');
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+    }
 }
 
 // Modal des sphères INTERACTIVE
@@ -160,7 +179,9 @@ function openSphereModal(sphereType) {
     const modal = document.getElementById('sphereModal');
     const modalContent = document.getElementById('modalContent');
     const sphere = appState.spheres[sphereType];
-    
+
+    if (!modal || !modalContent || !sphere) return;
+
     modalContent.innerHTML = `
         <h2>${sphere.icon} ${sphere.name}</h2>
         <div class="modal-progress">
@@ -180,7 +201,7 @@ function openSphereModal(sphereType) {
             </div>
         </div>
         <div class="sphere-details">
-            ${getSphereDetails(sphereType)}
+            ${getSphereDetails?.(sphereType) ?? ""}
         </div>
         <div class="sphere-actions">
             <button class="btn-primary" onclick="addActivity('${sphereType}')">
@@ -191,22 +212,27 @@ function openSphereModal(sphereType) {
             </button>
         </div>
     `;
-    
+
     modal.style.display = 'block';
 }
 
 // Mise à jour du progrès d'une sphère
 function updateSphereProgress(sphereType, value) {
     const progress = parseInt(value);
+    if (isNaN(progress)) return;
     appState.spheres[sphereType].progress = progress;
-    
+
     // Mise à jour de l'affichage dans le modal
-    document.getElementById('modalProgressFill').style.width = `${progress}%`;
-    document.getElementById('modalProgressText').textContent = `${progress}%`;
-    
+    const modalProgressFill = document.getElementById('modalProgressFill');
+    const modalProgressText = document.getElementById('modalProgressText');
+    if (modalProgressFill && modalProgressText) {
+        modalProgressFill.style.width = `${progress}%`;
+        modalProgressText.textContent = `${progress}%`;
+    }
+
     // Mise à jour de l'affichage dans le mandala
     updateSphereDisplay(sphereType, progress);
-    
+
     // Recalcul du score global
     calculateHarmonyScore();
 }
@@ -216,9 +242,9 @@ function updateSphereDisplay(sphereType, progress) {
     if (sphere) {
         const progressBar = sphere.querySelector('.progress-fill');
         const progressText = sphere.querySelector('.progress-text');
-        
-        progressBar.style.width = `${progress}%`;
-        progressText.textContent = `${progress}%`;
+
+        if (progressBar) progressBar.style.width = `${progress}%`;
+        if (progressText) progressText.textContent = `${progress}%`;
     }
 }
 
@@ -230,11 +256,12 @@ function addActivity(sphereType) {
         const currentProgress = appState.spheres[sphereType].progress;
         const newProgress = Math.min(100, currentProgress + 10);
         updateSphereProgress(sphereType, newProgress);
-        
+
         alert(`✅ Activité ajoutée ! ${appState.spheres[sphereType].name} +10%`);
-        
+
         // Fermer le modal
-        document.getElementById('sphereModal').style.display = 'none';
+        const modal = document.getElementById('sphereModal');
+        if (modal) modal.style.display = 'none';
     }
 }
 
@@ -278,10 +305,10 @@ function showSuggestions(sphereType) {
             "📱 Annuler un abonnement inutile"
         ]
     };
-    
+
     const sphereSuggestions = suggestions[sphereType] || [];
     const suggestionsList = sphereSuggestions.map((s, i) => `${i + 1}. ${s}`).join('\n');
-    
+
     alert(`💡 Suggestions pour ${appState.spheres[sphereType].name} :\n\n${suggestionsList}`);
 }
 
@@ -298,7 +325,7 @@ function handleQuickAction(action) {
             startFocusMode();
             break;
         case 'review':
-            showInteractiveReview();
+            showInteractiveReview?.();
             break;
     }
 }
@@ -308,11 +335,11 @@ function startMeditation() {
     const duration = prompt('⏱️ Durée de méditation (en minutes) :', '10');
     if (duration && !isNaN(duration)) {
         alert(`🧘 Méditation de ${duration} minutes lancée...\n\nFermez les yeux et concentrez-vous sur votre respiration.`);
-        
+
         // Augmenter le score spirituel
         const newProgress = Math.min(100, appState.spheres.spiritual.progress + 5);
         updateSphereProgress('spiritual', newProgress);
-        
+
         setTimeout(() => {
             alert('🔔 Méditation terminée ! Bien joué !');
         }, 3000); // Simulation
@@ -324,11 +351,11 @@ function openJournal() {
     const mood = prompt('Comment vous sentez-vous ? (1-10) :', '7');
     const gratitude = prompt('Citez une chose pour laquelle vous êtes reconnaissant :');
     const reflection = prompt('Une réflexion du jour :');
-    
+
     if (mood && gratitude) {
         appState.insights.mood.value = parseInt(mood) >= 7 ? 'Positive' : 'Neutre';
         alert('📝 Journal sauvegardé avec succès !');
-        
+
         // Augmenter le score spirituel
         const newProgress = Math.min(100, appState.spheres.spiritual.progress + 3);
         updateSphereProgress('spiritual', newProgress);
@@ -340,14 +367,14 @@ function startFocusMode() {
     const task = prompt('Sur quoi voulez-vous vous concentrer ?');
     if (task) {
         alert(`🎯 Mode Focus activé pour : ${task}\n\nConcentrez-vous pendant 25 minutes !`);
-        
+
         // Ajouter la tâche aux focus du jour
         appState.focusTasks.push({
             id: appState.focusTasks.length + 1,
             text: task,
             completed: false
         });
-        
+
         updateFocusTasks();
         saveData();
     }
@@ -356,18 +383,20 @@ function startFocusMode() {
 // Mise à jour des tâches focus
 function updateFocusTasks() {
     const container = document.querySelector('.focus-items');
+    if (!container) return;
+
     container.innerHTML = appState.focusTasks.map((task, index) => `
         <div class="focus-item">
             <input type="checkbox" id="focus${index + 1}" ${task.completed ? 'checked' : ''}>
             <label for="focus${index + 1}">${task.text}</label>
         </div>
     `).join('');
-    
+
     // Réattacher les event listeners
     document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
         checkbox.addEventListener('change', function() {
             appState.focusTasks[index].completed = this.checked;
-            updateProgress();
+            updateProgress?.();
             saveData();
         });
     });
@@ -377,6 +406,15 @@ function updateFocusTasks() {
 function showInteractiveReview() {
     const completedTasks = appState.focusTasks.filter(t => t.completed).length;
     const totalTasks = appState.focusTasks.length;
-    
+
     const review = `
 📊 BILAN INTERACTIF DU JOUR
+Tâches réalisées : ${completedTasks} / ${totalTasks}
+Score d'harmonie actuel : ${appState.harmonyScore}
+Humeur du jour : ${appState.insights.mood.value}
+
+Bravo pour vos progrès ! Gardez le cap 🌱
+`;
+
+    alert(review);
+}
