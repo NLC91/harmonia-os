@@ -35,7 +35,7 @@ function initializeApp() {
     loadSavedData();
     calculateHarmonyScore();
     setupEventListeners();
-    animateOnLoad?.();
+    if (typeof animateOnLoad === "function") animateOnLoad();
     updateAllDisplays();
 }
 
@@ -53,12 +53,10 @@ function loadSavedData() {
     if (saved) {
         try {
             const savedState = JSON.parse(saved);
-            // Vérification basique pour éviter d'écraser l'état par une valeur incorrecte
             if (typeof savedState === 'object' && savedState !== null) {
                 Object.assign(appState, savedState);
             }
         } catch (e) {
-            // Si parsing échoue, supprimer la donnée corrompue pour éviter de bloquer l'appli
             localStorage.removeItem('harmoniaState');
             alert("Des données corrompues ont été trouvées. Les données ont été réinitialisées.");
         }
@@ -141,7 +139,7 @@ function setupEventListeners() {
     const harmonyBtn = document.getElementById('harmonyBtn');
     if (harmonyBtn) {
         harmonyBtn.addEventListener('click', function() {
-            showHarmonyInsights?.();
+            if (typeof showHarmonyInsights === "function") showHarmonyInsights();
         });
     }
 
@@ -157,7 +155,7 @@ function setupEventListeners() {
     document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
         checkbox.addEventListener('change', function() {
             appState.focusTasks[index].completed = this.checked;
-            updateProgress?.();
+            if (typeof updateProgress === "function") updateProgress();
             saveData();
         });
     });
@@ -201,7 +199,7 @@ function openSphereModal(sphereType) {
             </div>
         </div>
         <div class="sphere-details">
-            ${getSphereDetails?.(sphereType) ?? ""}
+            ${typeof getSphereDetails === "function" ? getSphereDetails(sphereType) : ""}
         </div>
         <div class="sphere-actions">
             <button class="btn-primary" onclick="addActivity('${sphereType}')">
@@ -325,7 +323,7 @@ function handleQuickAction(action) {
             startFocusMode();
             break;
         case 'review':
-            showInteractiveReview?.();
+            if (typeof showInteractiveReview === "function") showInteractiveReview();
             break;
     }
 }
@@ -396,7 +394,7 @@ function updateFocusTasks() {
     document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
         checkbox.addEventListener('change', function() {
             appState.focusTasks[index].completed = this.checked;
-            updateProgress?.();
+            if (typeof updateProgress === "function") updateProgress();
             saveData();
         });
     });
