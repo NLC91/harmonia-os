@@ -1,236 +1,214 @@
-/* Suite du CSS */
-.harmony-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 30px rgba(99, 102, 241, 0.5);
+/* Variables et Reset */
+:root {
+    --primary: #6366f1;
+    --secondary: #8b5cf6;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --dark: #1f2937;
+    --light: #f9fafb;
+    --white: #ffffff;
+    --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
 }
 
-/* Quick Actions */
-.quick-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-bottom: 40px;
-    flex-wrap: wrap;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.action-btn {
-    background: var(--white);
-    border: 2px solid #e5e7eb;
-    border-radius: 15px;
-    padding: 15px 25px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 16px;
-    font-weight: 500;
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--light);
+    color: var(--dark);
+    line-height: 1.6;
+    overflow-x: hidden;
 }
 
-.action-btn:hover {
-    border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
-.action-icon {
-    font-size: 24px;
-}
-
-/* Today's Focus */
-.today-focus {
+/* Header */
+.header {
     background: var(--white);
     border-radius: 20px;
-    padding: 30px;
+    padding: 20px 30px;
     margin-bottom: 30px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-.today-focus h2 {
-    margin-bottom: 20px;
-    color: var(--dark);
-}
-
-.focus-items {
+.header-content {
     display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.focus-item {
-    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 15px;
-    padding: 15px;
-    background: #f9fafb;
-    border-radius: 10px;
-    transition: all 0.3s ease;
 }
 
-.focus-item:hover {
-    background: #f3f4f6;
+.logo {
+    font-size: 28px;
+    font-weight: 700;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
-.focus-item input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
+.header-info {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    color: #6b7280;
 }
 
-.focus-item label {
-    cursor: pointer;
-    flex: 1;
-    font-size: 16px;
-}
-
-.focus-item input[type="checkbox"]:checked + label {
-    text-decoration: line-through;
-    color: #9ca3af;
-}
-
-/* Insights */
-.insights {
+/* Harmony Score */
+.harmony-score {
+    text-align: center;
     margin-bottom: 40px;
 }
 
-.insights h2 {
-    margin-bottom: 20px;
+.score-circle {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 20px;
+    position: relative;
+}
+
+.score-bg {
+    fill: none;
+    stroke: #e5e7eb;
+    stroke-width: 10;
+}
+
+.score-fill {
+    fill: none;
+    stroke: url(#gradient);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 565;
+    stroke-dashoffset: 141;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    transition: stroke-dashoffset 1s ease;
+}
+
+.score-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     text-align: center;
 }
 
-.insight-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+.score-number {
+    display: block;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--primary);
 }
 
-.insight-card {
-    background: var(--white);
-    border-radius: 15px;
-    padding: 25px;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+.score-label {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.score-message {
+    font-size: 18px;
+    color: #4b5563;
+}
+
+/* Life Mandala */
+.life-mandala {
+    margin-bottom: 40px;
+}
+
+.mandala-container {
+    width: 500px;
+    height: 500px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.sphere {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(180px) rotate(calc(-1 * var(--angle)));
     transition: all 0.3s ease;
 }
 
-.insight-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+.sphere:hover {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateX(180px) rotate(calc(-1 * var(--angle))) scale(1.1);
 }
 
-.insight-icon {
+.sphere-content {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.sphere-content:hover {
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+
+.sphere-icon {
     font-size: 36px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
-.insight-card h4 {
+.sphere h3 {
     font-size: 14px;
-    color: #6b7280;
-    margin-bottom: 5px;
-}
-
-.insight-card p {
-    font-size: 20px;
     font-weight: 600;
     margin-bottom: 10px;
 }
 
-.trend {
-    font-size: 12px;
-    font-weight: 500;
-    padding: 4px 8px;
-    border-radius: 5px;
+.sphere-progress {
+    margin-top: 10px;
 }
 
-.trend.up {
-    color: var(--success);
-    background: #d1fae5;
+.progress-bar {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 5px;
 }
 
-.trend.down {
-    color: var(--danger);
-    background: #fee2e2;
-}
-
-.trend.neutral {
-    color: var(--warning);
-    background: #fef3c7;
-}
-
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
+.progress-fill {
     height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    animation: fadeIn 0.3s ease;
+    background: var(--gradient);
+    border-radius: 3px;
+    transition: width 0.5s ease;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+.progress-text {
+    font-size: 12px;
+    color: #6b7280;
 }
 
-.modal-content {
-    background-color: var(--white);
-    margin: 5% auto;
-    padding: 40px;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 600px;
-    position: relative;
-    animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.close {
+/* Mandala Center */
+.mandala-center {
     position: absolute;
-    right: 20px;
-    top: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #aaa;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.harmony-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    background: var(--gradient);
+    color: white;
+    font-size: 32px;
     cursor: pointer;
-    transition: color 0.3s ease;
-}
-
-.close:hover {
-    color: #000;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .mandala-container {
-        width: 350px;
-        height: 350px;
-    }
-    
-    .sphere {
-        width: 100px;
-        height: 100px;
-        transform: translate(-50%, -50%) rotate(var(--angle)) translateX(120px) rotate(calc(-1 * var(--angle)));
-    }
-    
-    .sphere-icon {
-        font-size: 24px;
-    }
-    
-    .insight-cards {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* Gradient SVG */
-svg {
-    width: 0;
-    height: 0;
-    position: absolute;
-}
+    box-shadow: 
