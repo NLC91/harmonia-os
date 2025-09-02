@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonia OS - Votre Système de Vie</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Dashboard Principal -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">Harmonia OS</h1>
+                <div class="header-info">
+                    <span class="date" id="currentDate"></span>
+                    <span class="time" id="currentTime"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Score d'Harmonie Global -->
+        <div class="harmony-score">
+            <div class="score-circle">
+                <svg viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="90" class="score-bg"/>
+                    <circle cx="100" cy="100" r="90" class="score-fill" id="harmonyCircle"/>
+                </svg>
+                <div class="score-text">
+                    <span class="score-number" id="harmonyScore">75</span>
+                    <span class="score-label">Harmonie</span>
+                </div>
+            </div>
+            <p class="score-message" id="scoreMessage">Votre équilibre de vie est bon !</p>
+        </div>
+
+        <!-- Mandala de Vie - 6 Sphères -->
+        <div class="life-mandala">
+            <div class="mandala-container">
+                <!-- Sphère Santé -->
+                <div class="sphere" data-sphere="health" style="--angle: 0deg;">
+                    <div class="sphere-content">
+                        <div class="sphere-icon">💪</div>
+                        <h3>Santé</h3>
+                        <div class="sphere-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 60%"></div>
+                            </div>
+                            <span class="progress-text">60%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sphère Spiritualité -->
+                <div class="sphere" data-sphere="spiritual" style="--angle: 60deg;">
+                    <div class="sphere-content">
+                        <div class="sphere-icon">🧘</div>
+                        <h3>Spiritualité</h3>
+                        <div class="sphere-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 40%"></div>
+                            </div>
+                            <span class="progress-text">40%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sphère Famille -->
+                <div class="sphere" data-sphere="family" style="--angle: 120deg;">
+                    <div class="sphere-content">
+                        <div class="sphere-icon">👨‍👩‍👧</div>
+                        <h3>Famille</h3>
+                        <div class="sphere-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 80%"></div>
+                            </div>
+                            <span class="progress-text">80%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sphère Social -->
+                <div class="sphere" data-sphere="social" style="--angle: 180deg;">
+                    <div class="sphere-content">
+                        <div class="sphere-icon">👥</div>
+                        <h3>Social</h3>
+                        <div class="sphere-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 45%"></div>
+                            </div>
+                            <span class="progress-text">45%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sphère Professionnel -->
+                <div class="sphere" data-sphere="work" style="--angle: 240deg;">
+                    <div class="sphere-content">
+                        <div class="sphere-icon">💼</div>
+                        <h3>Professionnel</h3>
+                        <div class="sphere-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 90%"></div>
+                            </div>
+                            <span class="progress-text">90%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sphère Finances -->
+                <div class="sphere" data-sphere="finance" style="--angle: 300deg;">
+                    <div class="sphere-content">
+                        <div class="sphere-icon">💰</div>
+                        <h3>Finances</h3>
+                        <div class="sphere-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 70%"></div>
+                            </div>
+                            <span class="progress-text">70%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Centre du Mandala -->
+                <div class="mandala-center">
+                    <button class="harmony-btn" id="harmonyBtn">
+                        <span>✨</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="action-btn" data-action="meditate">
+                <span class="action-icon">🧘</span>
+                <span>Méditer</span>
+            </button>
+            <button class="action-btn" data-action="journal">
+                <span class="action-icon">📝</span>
+                <span>Journal</span>
+            </button>
+            <button class="action-btn" data-action="focus">
+                <span class="action-icon">🎯</span>
+                <span>Focus</span>
+            </button>
+            <button class="action-btn" data-action="review">
+                <span class="action-icon">📊</span>
+                <span>Bilan</span>
+            </button>
+        </div>
+
+        <!-- Today's Focus -->
+        <div class="today-focus">
+            <h2>Focus du Jour</h2>
+            <div class="focus-items">
+                <div class="focus-item">
+                    <input type="checkbox" id="focus1">
+                    <label for="focus1">Séance de sport 30 min</label>
+                </div>
+                <div class="focus-item">
+                    <input type="checkbox" id="focus2">
+                    <label for="focus2">Appeler Maman</label>
+                </div>
+                <div class="focus-item">
+                    <input type="checkbox" id="focus3">
+                    <label for="focus3">Finaliser présentation</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="insights">
+            <h2>Insights du Jour</h2>
+            <div class="insight-cards">
+                <div class="insight-card">
+                    <div class="insight-icon">😴</div>
+                    <h4>Sommeil</h4>
+                    <p>7h30 cette nuit</p>
+                    <span class="trend up">+15%</span>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">🏃</div>
+                    <h4>Activité</h4>
+                    <p>4,500 pas</p>
+                    <span class="trend down">-20%</span>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">💧</div>
+                    <h4>Hydratation</h4>
+                    <p>5/8 verres</p>
+                    <span class="trend neutral">62%</span>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-icon">😊</div>
+                    <h4>Humeur</h4>
+                    <p>Positive</p>
+                    <span class="trend up">Stable</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Détail Sphère -->
+    <div class="modal" id="sphereModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
