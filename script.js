@@ -1,5 +1,20 @@
 // Harmonia OS - JavaScript Interactif Complet
 
+// Fonctions manquantes ajoutées pour robustesse
+function animateOnLoad() {
+    // Animation d'entrée (optionnel)
+}
+function getSphereDetails(sphereType) {
+    // Détail statique ou vide
+    return "";
+}
+function showHarmonyInsights() {
+    alert("Fonctionnalité à implémenter : Insights Harmonie.");
+}
+function updateProgress() {
+    // Optionnel : peut recalculer le score, etc.
+}
+
 // État de l'application
 const appState = {
     spheres: {
@@ -35,7 +50,7 @@ function initializeApp() {
     loadSavedData();
     calculateHarmonyScore();
     setupEventListeners();
-    if (typeof animateOnLoad === "function") animateOnLoad();
+    animateOnLoad();
     updateAllDisplays();
 }
 
@@ -103,12 +118,9 @@ function updateHarmonyDisplay() {
 
 // Mise à jour de tous les affichages
 function updateAllDisplays() {
-    // Mise à jour des sphères
     Object.entries(appState.spheres).forEach(([key, sphere]) => {
         updateSphereDisplay(key, sphere.progress);
     });
-
-    // Mise à jour des tâches
     updateFocusTasks();
 }
 
@@ -127,7 +139,6 @@ function updateDateTime() {
 
 // Event Listeners
 function setupEventListeners() {
-    // Sphères
     document.querySelectorAll('.sphere').forEach(sphere => {
         sphere.addEventListener('click', function() {
             const sphereType = this.dataset.sphere;
@@ -135,15 +146,13 @@ function setupEventListeners() {
         });
     });
 
-    // Bouton central
     const harmonyBtn = document.getElementById('harmonyBtn');
     if (harmonyBtn) {
         harmonyBtn.addEventListener('click', function() {
-            if (typeof showHarmonyInsights === "function") showHarmonyInsights();
+            showHarmonyInsights();
         });
     }
 
-    // Actions rapides
     document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const action = this.dataset.action;
@@ -151,16 +160,14 @@ function setupEventListeners() {
         });
     });
 
-    // Focus tasks
     document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
         checkbox.addEventListener('change', function() {
             appState.focusTasks[index].completed = this.checked;
-            if (typeof updateProgress === "function") updateProgress();
+            updateProgress();
             saveData();
         });
     });
 
-    // Modal
     const modal = document.getElementById('sphereModal');
     const closeBtn = document.querySelector('.close');
 
@@ -199,7 +206,7 @@ function openSphereModal(sphereType) {
             </div>
         </div>
         <div class="sphere-details">
-            ${typeof getSphereDetails === "function" ? getSphereDetails(sphereType) : ""}
+            ${getSphereDetails(sphereType)}
         </div>
         <div class="sphere-actions">
             <button class="btn-primary" onclick="addActivity('${sphereType}')">
@@ -220,7 +227,6 @@ function updateSphereProgress(sphereType, value) {
     if (isNaN(progress)) return;
     appState.spheres[sphereType].progress = progress;
 
-    // Mise à jour de l'affichage dans le modal
     const modalProgressFill = document.getElementById('modalProgressFill');
     const modalProgressText = document.getElementById('modalProgressText');
     if (modalProgressFill && modalProgressText) {
@@ -228,10 +234,7 @@ function updateSphereProgress(sphereType, value) {
         modalProgressText.textContent = `${progress}%`;
     }
 
-    // Mise à jour de l'affichage dans le mandala
     updateSphereDisplay(sphereType, progress);
-
-    // Recalcul du score global
     calculateHarmonyScore();
 }
 
@@ -250,14 +253,12 @@ function updateSphereDisplay(sphereType, progress) {
 function addActivity(sphereType) {
     const activity = prompt(`Quelle activité avez-vous réalisée pour ${appState.spheres[sphereType].name} ?`);
     if (activity) {
-        // Augmenter le progrès
         const currentProgress = appState.spheres[sphereType].progress;
         const newProgress = Math.min(100, currentProgress + 10);
         updateSphereProgress(sphereType, newProgress);
 
         alert(`✅ Activité ajoutée ! ${appState.spheres[sphereType].name} +10%`);
 
-        // Fermer le modal
         const modal = document.getElementById('sphereModal');
         if (modal) modal.style.display = 'none';
     }
@@ -323,7 +324,7 @@ function handleQuickAction(action) {
             startFocusMode();
             break;
         case 'review':
-            if (typeof showInteractiveReview === "function") showInteractiveReview();
+            showInteractiveReview();
             break;
     }
 }
@@ -334,13 +335,12 @@ function startMeditation() {
     if (duration && !isNaN(duration)) {
         alert(`🧘 Méditation de ${duration} minutes lancée...\n\nFermez les yeux et concentrez-vous sur votre respiration.`);
 
-        // Augmenter le score spirituel
         const newProgress = Math.min(100, appState.spheres.spiritual.progress + 5);
         updateSphereProgress('spiritual', newProgress);
 
         setTimeout(() => {
             alert('🔔 Méditation terminée ! Bien joué !');
-        }, 3000); // Simulation
+        }, 3000);
     }
 }
 
@@ -354,7 +354,6 @@ function openJournal() {
         appState.insights.mood.value = parseInt(mood) >= 7 ? 'Positive' : 'Neutre';
         alert('📝 Journal sauvegardé avec succès !');
 
-        // Augmenter le score spirituel
         const newProgress = Math.min(100, appState.spheres.spiritual.progress + 3);
         updateSphereProgress('spiritual', newProgress);
     }
@@ -366,7 +365,6 @@ function startFocusMode() {
     if (task) {
         alert(`🎯 Mode Focus activé pour : ${task}\n\nConcentrez-vous pendant 25 minutes !`);
 
-        // Ajouter la tâche aux focus du jour
         appState.focusTasks.push({
             id: appState.focusTasks.length + 1,
             text: task,
@@ -390,11 +388,10 @@ function updateFocusTasks() {
         </div>
     `).join('');
 
-    // Réattacher les event listeners
     document.querySelectorAll('.focus-item input').forEach((checkbox, index) => {
         checkbox.addEventListener('change', function() {
             appState.focusTasks[index].completed = this.checked;
-            if (typeof updateProgress === "function") updateProgress();
+            updateProgress();
             saveData();
         });
     });
